@@ -3,5 +3,10 @@
   "outputDirectory": "apps/web/dist",
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install",
-  "framework": null
+  "framework": null,
+  "functions": {
+    "api/**/*.ts": {
+      "includeFiles": "{apps/api/**,packages/shared/**}"
+    }
+  }
 }
