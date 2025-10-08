@@ -1,0 +1,16 @@
+{
+  "name": "markdown-viewer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"API,WEB\" -c \"blue,magenta\" \"pnpm --filter @markdown-viewer/api dev\" \"pnpm --filter @markdown-viewer/web dev\"",
+    "build": "pnpm --filter @markdown-viewer/web build && pnpm --filter @markdown-viewer/api build",
+    "lint": "pnpm --filter @markdown-viewer/web lint",
+    "preview": "pnpm --filter @markdown-viewer/web preview"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.2"
+  }
+}

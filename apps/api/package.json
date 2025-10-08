@@ -1,0 +1,29 @@
+{
+  "name": "@markdown-viewer/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env.local dev.ts",
+    "build": "tsc",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@hono/clerk-auth": "^3.0.3",
+    "@markdown-viewer/shared": "workspace:*",
+    "@neondatabase/serverless": "^1.0.2",
+    "drizzle-orm": "^0.44.6",
+    "hono": "^4.9.10"
+  },
+  "devDependencies": {
+    "@hono/node-server": "^1.19.5",
+    "@types/node": "^24.7.0",
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
