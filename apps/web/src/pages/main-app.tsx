@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
 import { Editor } from '../components/editor'
 import { Preview } from '../components/preview'
@@ -15,6 +15,7 @@ export function MainApp() {
   const [activeFileId, setActiveFileId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode())
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [localContent, setLocalContent] = useState<string>('')
 
   // API hooks
   const { data: files = [], isLoading } = useFiles()
@@ -24,6 +25,9 @@ export function MainApp() {
 
   const activeFile = files.find((f: MarkdownFile) => f.id === activeFileId)
   const markdown = activeFile?.content || ''
+
+  // Debounce timer ref
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Set first file as active when files load
   useEffect(() => {
@@ -37,14 +41,39 @@ export function MainApp() {
     saveViewMode(viewMode)
   }, [viewMode])
 
-  const handleMarkdownChange = (newContent: string) => {
+  // Sync local content with active file
+  useEffect(() => {
+    setLocalContent(markdown)
+  }, [activeFileId, markdown])
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
+    }
+  }, [])
+
+  const handleMarkdownChange = useCallback((newContent: string) => {
     if (!activeFileId) return
 
-    updateFile.mutate({
-      id: activeFileId,
-      data: { content: newContent },
-    })
-  }
+    // Update local state immediately for responsive UI
+    setLocalContent(newContent)
+
+    // Clear existing timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    }
+
+    // Set new timer to update API after 500ms of no typing
+    debounceTimer.current = setTimeout(() => {
+      updateFile.mutate({
+        id: activeFileId,
+        data: { content: newContent },
+      })
+    }, 500)
+  }, [activeFileId, updateFile])
 
   const handleFileCreate = () => {
     createFile.mutate(
@@ -170,23 +199,23 @@ export function MainApp() {
                   {viewMode === 'split' && (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full max-w-7xl mx-auto">
                       <div className="h-full min-h-96">
-                        <Editor value={markdown} onChange={handleMarkdownChange} />
+                        <Editor value={localContent} onChange={handleMarkdownChange} />
                       </div>
                       <div className="h-full min-h-96">
-                        <Preview markdown={markdown} />
+                        <Preview markdown={localContent} />
                       </div>
                     </div>
                   )}
 
                   {viewMode === 'edit' && (
                     <div className="max-w-6xl mx-auto h-full">
-                      <Editor value={markdown} onChange={handleMarkdownChange} />
+                      <Editor value={localContent} onChange={handleMarkdownChange} />
                     </div>
                   )}
 
                   {viewMode === 'preview' && (
                     <div className="max-w-5xl mx-auto h-full">
-                      <Preview markdown={markdown} />
+                      <Preview markdown={localContent} />
                     </div>
                   )}
                 </>
