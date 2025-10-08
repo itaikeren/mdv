@@ -8,5 +8,11 @@
     "api/**/*.ts": {
       "includeFiles": "{apps/api/**,packages/shared/**}"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/[[...path]]"
+    }
+  ]
 }
