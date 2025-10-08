@@ -1,9 +1,9 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import { cors } from 'hono/cors'
-import { clerkMiddleware } from './middleware/auth'
-import filesRoutes from './routes/files'
-import sharesRoutes from './routes/shares'
+import { clerkMiddleware } from './middleware/auth.js'
+import filesRoutes from './routes/files.js'
+import sharesRoutes from './routes/shares.js'
 
 // Create Hono app
 const app = new Hono().basePath('/api')

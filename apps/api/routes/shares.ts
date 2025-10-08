@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { eq, and, sql } from 'drizzle-orm'
-import { db } from '../db/client'
-import { files, shares } from '../db/schema'
-import { requireAuth } from '../middleware/auth'
+import { db } from '../db/client.js'
+import { files, shares } from '../db/schema.js'
+import { requireAuth } from '../middleware/auth.js'
 import type { CreateShareInput } from '@markdown-viewer/shared'
 
 const app = new Hono()
