@@ -2,17 +2,15 @@ import { Hono } from 'hono'
 import { eq, and, sql } from 'drizzle-orm'
 import { db } from '../db/client'
 import { files, shares } from '../db/schema'
-import { getAuth, requireAuth } from '../middleware/auth'
+import { requireAuth } from '../middleware/auth'
 import type { CreateShareInput } from '@markdown-viewer/shared'
 
 const app = new Hono()
 
 // Create a share link
 app.post('/', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
-
-  const auth = getAuth(c)
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
   try {
     const body = await c.req.json<CreateShareInput>()
@@ -21,7 +19,7 @@ app.post('/', async (c) => {
     const file = await db.query.files.findFirst({
       where: and(
         eq(files.id, body.fileId),
-        eq(files.userId, auth.userId!)
+        eq(files.userId, auth.userId)
       ),
     })
 
@@ -97,10 +95,9 @@ app.get('/:token', async (c) => {
 
 // Get all shares for a file
 app.get('/file/:fileId', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
-  const auth = getAuth(c)
   const { fileId } = c.req.param()
 
   try {
@@ -108,7 +105,7 @@ app.get('/file/:fileId', async (c) => {
     const file = await db.query.files.findFirst({
       where: and(
         eq(files.id, fileId),
-        eq(files.userId, auth.userId!)
+        eq(files.userId, auth.userId)
       ),
     })
 
@@ -131,10 +128,9 @@ app.get('/file/:fileId', async (c) => {
 
 // Delete a share
 app.delete('/:id', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
-  const auth = getAuth(c)
   const { id } = c.req.param()
 
   try {

@@ -1,13 +1,18 @@
-import { clerkMiddleware, getAuth } from '@hono/clerk-auth'
+import { clerkMiddleware, getAuth as clerkGetAuth } from '@hono/clerk-auth'
 import type { Context } from 'hono'
 
-export { clerkMiddleware, getAuth }
+export { clerkMiddleware }
 
-// Helper to ensure user is authenticated
+// Re-export getAuth with non-null assertion helper
+export function getAuth(c: Context) {
+  return clerkGetAuth(c)
+}
+
+// Helper to ensure user is authenticated and return auth
 export async function requireAuth(c: Context) {
-  const auth = getAuth(c)
+  const auth = clerkGetAuth(c)
   if (!auth?.userId) {
-    return c.json({ error: 'Unauthorized' }, 401)
+    return { error: c.json({ error: 'Unauthorized' }, 401), auth: null }
   }
-  return null
+  return { error: null, auth }
 }

@@ -2,23 +2,21 @@ import { Hono } from 'hono'
 import { eq, and } from 'drizzle-orm'
 import { db } from '../db/client'
 import { files, users } from '../db/schema'
-import { getAuth, requireAuth } from '../middleware/auth'
+import { requireAuth } from '../middleware/auth'
 import type { CreateFileInput, UpdateFileInput } from '@markdown-viewer/shared'
 
 const app = new Hono()
 
 // Get all files for the authenticated user
 app.get('/', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
-
-  const auth = getAuth(c)
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
   try {
     const userFiles = await db
       .select()
       .from(files)
-      .where(eq(files.userId, auth.userId!))
+      .where(eq(files.userId, auth.userId))
       .orderBy(files.updatedAt)
 
     return c.json(userFiles)
@@ -30,17 +28,16 @@ app.get('/', async (c) => {
 
 // Get a single file
 app.get('/:id', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
-  const auth = getAuth(c)
   const { id } = c.req.param()
 
   try {
     const file = await db.query.files.findFirst({
       where: and(
         eq(files.id, id),
-        eq(files.userId, auth.userId!)
+        eq(files.userId, auth.userId)
       ),
     })
 
@@ -57,10 +54,8 @@ app.get('/:id', async (c) => {
 
 // Create a new file
 app.post('/', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
-
-  const auth = getAuth(c)
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
   try {
     const body = await c.req.json<CreateFileInput>()
@@ -69,8 +64,8 @@ app.post('/', async (c) => {
     await db
       .insert(users)
       .values({
-        id: auth.userId!,
-        email: auth.sessionClaims?.email as string || '',
+        id: auth.userId,
+        email: (auth.sessionClaims?.email as string) || '',
       })
       .onConflictDoNothing()
 
@@ -78,7 +73,7 @@ app.post('/', async (c) => {
     const [newFile] = await db
       .insert(files)
       .values({
-        userId: auth.userId!,
+        userId: auth.userId,
         name: body.name,
         content: body.content || '',
       })
@@ -93,10 +88,9 @@ app.post('/', async (c) => {
 
 // Update a file
 app.put('/:id', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
-  const auth = getAuth(c)
   const { id } = c.req.param()
 
   try {
@@ -106,7 +100,7 @@ app.put('/:id', async (c) => {
     const existingFile = await db.query.files.findFirst({
       where: and(
         eq(files.id, id),
-        eq(files.userId, auth.userId!)
+        eq(files.userId, auth.userId)
       ),
     })
 
@@ -133,10 +127,9 @@ app.put('/:id', async (c) => {
 
 // Delete a file
 app.delete('/:id', async (c) => {
-  const authError = await requireAuth(c)
-  if (authError) return authError
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
 
-  const auth = getAuth(c)
   const { id } = c.req.param()
 
   try {
@@ -144,7 +137,7 @@ app.delete('/:id', async (c) => {
     const existingFile = await db.query.files.findFirst({
       where: and(
         eq(files.id, id),
-        eq(files.userId, auth.userId!)
+        eq(files.userId, auth.userId)
       ),
     })
 
