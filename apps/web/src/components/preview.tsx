@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, memo } from 'react'
 import type { ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -78,7 +78,40 @@ interface CodeBlockProps {
   className?: string
 }
 
-function CodeBlock({ children, className }: CodeBlockProps) {
+// Pre-defined wrapper components (stable references)
+function PreWrapper({ children }: { children?: ReactNode }) {
+  return <div>{children}</div>
+}
+
+function H1Wrapper({ children }: { children?: ReactNode }) {
+  return <HeadingRenderer level={1} children={children} />
+}
+
+function H2Wrapper({ children }: { children?: ReactNode }) {
+  return <HeadingRenderer level={2} children={children} />
+}
+
+function H3Wrapper({ children }: { children?: ReactNode }) {
+  return <HeadingRenderer level={3} children={children} />
+}
+
+function H4Wrapper({ children }: { children?: ReactNode }) {
+  return <HeadingRenderer level={4} children={children} />
+}
+
+function H5Wrapper({ children }: { children?: ReactNode }) {
+  return <HeadingRenderer level={5} children={children} />
+}
+
+function H6Wrapper({ children }: { children?: ReactNode }) {
+  return <HeadingRenderer level={6} children={children} />
+}
+
+function LinkWrapper({ href, children }: { href?: string; children?: ReactNode }) {
+  return <LinkRenderer href={href} children={children} />
+}
+
+const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlockProps) {
   const [highlightedCode, setHighlightedCode] = useState<string>('')
 
   const code = String(children).replace(/\n$/, '')
@@ -94,13 +127,13 @@ function CodeBlock({ children, className }: CodeBlockProps) {
   useEffect(() => {
     if (!isCodeBlock || isMermaid) return
 
-    highlightCode(code, language, 'light')
+    highlightCode(code, language)
       .then(setHighlightedCode)
       .catch(() => {
         // Fallback to plain code block if highlighting fails
         setHighlightedCode(`<pre><code>${code}</code></pre>`)
       })
-  }, [children, className, isCodeBlock, code, isMermaid, language])
+  }, [code, language, isCodeBlock, isMermaid])
 
   // Inline code - just return a styled span
   if (!isCodeBlock) {
@@ -131,9 +164,25 @@ function CodeBlock({ children, className }: CodeBlockProps) {
       dangerouslySetInnerHTML={{ __html: highlightedCode }}
     />
   )
+})
+
+// Stable components object defined at module level
+const MARKDOWN_COMPONENTS = {
+  code: CodeBlock,
+  pre: PreWrapper,
+  h1: H1Wrapper,
+  h2: H2Wrapper,
+  h3: H3Wrapper,
+  h4: H4Wrapper,
+  h5: H5Wrapper,
+  h6: H6Wrapper,
+  a: LinkWrapper
 }
 
-export function Preview({ markdown }: PreviewProps) {
+// Stable plugins array defined at module level
+const MARKDOWN_PLUGINS = [remarkGfm]
+
+export const Preview = memo(function Preview({ markdown }: PreviewProps) {
   return (
     <div className="
       h-full overflow-y-auto
@@ -142,20 +191,7 @@ export function Preview({ markdown }: PreviewProps) {
     ">
       {markdown ? (
         <div className="prose prose-gray max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code: CodeBlock,
-              pre: ({ children }) => <div>{children}</div>,
-              h1: ({ children }) => <HeadingRenderer level={1} children={children} />,
-              h2: ({ children }) => <HeadingRenderer level={2} children={children} />,
-              h3: ({ children }) => <HeadingRenderer level={3} children={children} />,
-              h4: ({ children }) => <HeadingRenderer level={4} children={children} />,
-              h5: ({ children }) => <HeadingRenderer level={5} children={children} />,
-              h6: ({ children }) => <HeadingRenderer level={6} children={children} />,
-              a: ({ href, children }) => <LinkRenderer href={href} children={children} />
-            }}
-          >
+          <ReactMarkdown remarkPlugins={MARKDOWN_PLUGINS} components={MARKDOWN_COMPONENTS}>
             {markdown}
           </ReactMarkdown>
         </div>
@@ -169,4 +205,4 @@ export function Preview({ markdown }: PreviewProps) {
       )}
     </div>
   )
-}
+})

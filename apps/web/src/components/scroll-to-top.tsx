@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export function ScrollToTopButton() {
   const [isVisible, setIsVisible] = useState(false)
@@ -21,12 +21,12 @@ export function ScrollToTopButton() {
   }, [])
 
   // Scroll to top function
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     })
-  }
+  }, [])
 
   if (!isVisible) {
     return null

@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { db } from '../db/client.js'
 import { files, users } from '../db/schema.js'
 import { requireAuth } from '../middleware/auth.js'
@@ -17,7 +17,7 @@ app.get('/', async (c) => {
       .select()
       .from(files)
       .where(eq(files.userId, auth.userId))
-      .orderBy(files.updatedAt)
+      .orderBy(desc(files.createdAt))
 
     return c.json(userFiles)
   } catch (error) {

@@ -1,15 +1,24 @@
+import React, { memo, useCallback } from 'react'
+
 interface EditorProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
 }
 
-export function Editor({ value, onChange, placeholder = 'Type your markdown here...' }: EditorProps) {
+export const Editor = memo(function Editor({ value, onChange, placeholder = 'Type your markdown here...' }: EditorProps) {
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChange(e.target.value)
+    },
+    [onChange]
+  )
+
   return (
     <div className="h-full flex flex-col">
       <textarea
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleChange}
         placeholder={placeholder}
         className="
           w-full h-full min-h-96 resize-none
@@ -23,4 +32,4 @@ export function Editor({ value, onChange, placeholder = 'Type your markdown here
       />
     </div>
   )
-}
+})

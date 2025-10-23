@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, memo } from 'react'
 import mermaid from 'mermaid'
 
 interface MermaidProps {
@@ -6,24 +6,30 @@ interface MermaidProps {
   id?: string
 }
 
-export function Mermaid({ chart, id }: MermaidProps) {
+// Mermaid config stays constant across renders
+const MERMAID_CONFIG = {
+  startOnLoad: false,
+  theme: 'default',
+  securityLevel: 'loose',
+  fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+} as const
+
+export const Mermaid = memo(function Mermaid({ chart, id }: MermaidProps) {
   const [svgContent, setSvgContent] = useState<string>('')
   const [isRendered, setIsRendered] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Generate mermaid ID once per mount, not on every render
+  const mermaidId = useMemo(
+    () => id || `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    [id]
+  )
+
   useEffect(() => {
     let isMounted = true
 
-    // Initialize mermaid with a unique ID to avoid conflicts
-    const mermaidId = id || `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-
     // Configure mermaid
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'default',
-      securityLevel: 'loose',
-      fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-    })
+    mermaid.initialize(MERMAID_CONFIG)
 
     const renderDiagram = async () => {
       try {
@@ -56,7 +62,7 @@ export function Mermaid({ chart, id }: MermaidProps) {
     return () => {
       isMounted = false
     }
-  }, [chart, id])
+  }, [chart, mermaidId])
 
   if (error) {
     return (
@@ -99,4 +105,4 @@ export function Mermaid({ chart, id }: MermaidProps) {
       </div>
     </div>
   )
-}
+})

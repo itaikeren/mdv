@@ -5,6 +5,7 @@ import { Preview } from '../components/preview'
 import { ModeToggle } from '../components/mode-toggle'
 import { ScrollToTopButton } from '../components/scroll-to-top'
 import { FileSidebar } from '../components/file-sidebar'
+import { MobileSidebar } from '../components/mobile-sidebar'
 import { ShareButton } from '../components/share-button'
 import { useFiles, useCreateFile, useUpdateFile, useDeleteFile } from '../hooks/use-files'
 import { loadViewMode, saveViewMode, type ViewMode } from '../utils/storage'
@@ -16,18 +17,41 @@ export function MainApp() {
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode())
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [localContent, setLocalContent] = useState<string>('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect if we're on mobile/tablet
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // API hooks
   const { data: files = [], isLoading } = useFiles()
   const createFile = useCreateFile()
   const updateFile = useUpdateFile()
-  const deleteFile = useDeleteFile()
+
+  // Memoize callback for activeFileId management
+  const handleDeletedFile = useCallback((deletedId: string) => {
+    if (deletedId === activeFileId) {
+      const remainingFiles = files.filter((f: MarkdownFile) => f.id !== deletedId)
+      setActiveFileId(remainingFiles[0]?.id || null)
+    }
+  }, [activeFileId, files])
+
+  const deleteFile = useDeleteFile(handleDeletedFile)
 
   const activeFile = files.find((f: MarkdownFile) => f.id === activeFileId)
   const markdown = activeFile?.content || ''
 
-  // Debounce timer ref
+  // Debounce timer refs
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const titleDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Set first file as active when files load
   useEffect(() => {
@@ -46,11 +70,14 @@ export function MainApp() {
     setLocalContent(markdown)
   }, [activeFileId, markdown])
 
-  // Cleanup debounce timer on unmount
+  // Cleanup debounce timers on unmount
   useEffect(() => {
     return () => {
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
+      }
+      if (titleDebounceTimer.current) {
+        clearTimeout(titleDebounceTimer.current)
       }
     }
   }, [])
@@ -73,9 +100,32 @@ export function MainApp() {
         data: { content: newContent },
       })
     }, 500)
-  }, [activeFileId, updateFile])
 
-  const handleFileCreate = () => {
+    // Auto-set title from first line if the file name is "Untitled X"
+    if (activeFile && activeFile.name.startsWith('Untitled ')) {
+      // Clear existing title timer
+      if (titleDebounceTimer.current) {
+        clearTimeout(titleDebounceTimer.current)
+      }
+
+      // Set new timer to update title after 1000ms of no typing
+      titleDebounceTimer.current = setTimeout(() => {
+        const firstLine = newContent.split('\n')[0].trim()
+        if (firstLine) {
+          // Extract text from markdown (remove # symbols and other markdown syntax)
+          const cleanTitle = firstLine.replace(/^#+\s*/, '').trim()
+          if (cleanTitle) {
+            updateFile.mutate({
+              id: activeFileId,
+              data: { name: cleanTitle },
+            })
+          }
+        }
+      }, 1000)
+    }
+  }, [activeFileId, activeFile, updateFile])
+
+  const handleFileCreate = useCallback(() => {
     createFile.mutate(
       {
         name: `Untitled ${files.length + 1}`,
@@ -88,37 +138,31 @@ export function MainApp() {
         },
       }
     )
-  }
+  }, [createFile, files.length, setViewMode])
 
-  const handleFileDelete = (fileId: string) => {
-    deleteFile.mutate(fileId, {
-      onSuccess: () => {
-        if (fileId === activeFileId) {
-          const remainingFiles = files.filter((f: MarkdownFile) => f.id !== fileId)
-          setActiveFileId(remainingFiles[0]?.id || null)
-        }
-      },
-    })
-  }
+  const handleFileDelete = useCallback((fileId: string) => {
+    // No inline onSuccess - callback runs immediately in onMutate
+    deleteFile.mutate(fileId)
+  }, [deleteFile])
 
-  const handleFileRename = (fileId: string, newName: string) => {
+  const handleFileRename = useCallback((fileId: string, newName: string) => {
     updateFile.mutate({
       id: fileId,
       data: { name: newName },
     })
-  }
+  }, [updateFile])
 
-  const handleFileSelect = (fileId: string) => {
+  const handleFileSelect = useCallback((fileId: string) => {
     setActiveFileId(fileId)
-  }
+  }, [])
 
   return (
     <>
       <SignedOut>
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
           <div className="text-center">
             <img src={logoSvg} alt="Markdown Viewer Logo" className="w-20 h-auto mx-auto mb-6" />
-            <h1 className="text-3xl font-medium text-slate-900 mb-2" style={{ fontFamily: "'IBM Plex Serif', serif" }}>
+            <h1 className="text-2xl md:text-3xl font-medium text-slate-900 mb-2" style={{ fontFamily: "'IBM Plex Serif', serif" }}>
               Markdown Viewer
             </h1>
             <p className="text-slate-600 mb-8">Sign in to start creating and sharing markdown files</p>
@@ -134,8 +178,8 @@ export function MainApp() {
       <SignedIn>
         <div className="h-screen bg-white flex flex-col overflow-hidden">
           {/* Header */}
-          <header className="flex-shrink-0 border-b border-slate-100 bg-white px-6 py-3 flex justify-between items-center">
-            <div className="flex items-center gap-3">
+          <header className="flex-shrink-0 border-b border-slate-100 bg-white px-3 py-2.5 md:px-6 md:py-3 flex justify-between items-center">
+            <div className="flex items-center gap-2 md:gap-3">
               {/* Sidebar Toggle Button */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -148,23 +192,37 @@ export function MainApp() {
               </button>
 
               {activeFile && (
-                <>
-                  <span className="text-sm font-medium text-slate-700">{activeFile.name}</span>
-                  <ShareButton fileId={activeFile.id} fileName={activeFile.name} />
-                </>
+                <span className="text-sm font-medium text-slate-700 hidden sm:inline truncate">{activeFile.name}</span>
               )}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <ModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+              {activeFile && (
+                <ShareButton fileId={activeFile.id} fileName={activeFile.name} />
+              )}
               <UserButton />
             </div>
           </header>
 
+          {/* Mobile Sidebar (Dialog) - Only on mobile/tablet */}
+          {isMobile && (
+            <MobileSidebar
+              open={sidebarOpen}
+              onOpenChange={setSidebarOpen}
+              files={files}
+              activeFileId={activeFileId}
+              onFileSelect={handleFileSelect}
+              onFileCreate={handleFileCreate}
+              onFileDelete={handleFileDelete}
+              onFileRename={handleFileRename}
+            />
+          )}
+
           {/* Main Content with Sidebar */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Sidebar */}
+            {/* Desktop Sidebar - Persistent on large screens */}
             {sidebarOpen && (
-              <aside className="w-64 border-r border-slate-100 flex-shrink-0 overflow-y-auto">
+              <aside className="hidden lg:block w-64 border-r border-slate-100 flex-shrink-0 overflow-y-auto">
                 <FileSidebar
                   files={files}
                   activeFileId={activeFileId}
@@ -177,7 +235,7 @@ export function MainApp() {
             )}
 
             {/* Editor/Preview Area */}
-            <main className="flex-1 p-8 overflow-y-auto bg-slate-50/30">
+            <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto bg-slate-50/30">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-slate-400">Loading...</div>
@@ -197,12 +255,12 @@ export function MainApp() {
               ) : (
                 <>
                   {viewMode === 'split' && (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full max-w-7xl mx-auto">
-                      <div className="h-full min-h-96">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full max-w-7xl mx-auto">
+                      <div className="h-full min-h-64 md:min-h-96">
                         <Editor value={localContent} onChange={handleMarkdownChange} />
                       </div>
-                      <div className="h-full min-h-96">
-                        <Preview markdown={localContent} />
+                      <div className="h-full min-h-64 md:min-h-96">
+                        <Preview key="preview-stable" markdown={localContent} />
                       </div>
                     </div>
                   )}
@@ -215,7 +273,7 @@ export function MainApp() {
 
                   {viewMode === 'preview' && (
                     <div className="max-w-5xl mx-auto h-full">
-                      <Preview markdown={localContent} />
+                      <Preview key="preview-stable" markdown={localContent} />
                     </div>
                   )}
                 </>
