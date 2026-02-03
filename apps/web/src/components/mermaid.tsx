@@ -1,108 +1,130 @@
-import { useEffect, useState, useMemo, memo } from 'react'
-import mermaid from 'mermaid'
+import { useEffect, useState, useMemo, memo } from "react";
+import mermaid from "mermaid";
+import { useTheme } from "../hooks/use-theme";
 
 interface MermaidProps {
-  chart: string
-  id?: string
+  chart: string;
+  id?: string;
 }
 
-// Mermaid config stays constant across renders
-const MERMAID_CONFIG = {
-  startOnLoad: false,
-  theme: 'default',
-  securityLevel: 'loose',
-  fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-} as const
+const FONT_FAMILY =
+  "JetBrains Mono, 0xProto, SF Mono, Monaco, Cascadia Code, Consolas, Courier New, monospace";
 
 export const Mermaid = memo(function Mermaid({ chart, id }: MermaidProps) {
-  const [svgContent, setSvgContent] = useState<string>('')
-  const [isRendered, setIsRendered] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { theme } = useTheme();
+  const [svgContent, setSvgContent] = useState<string>("");
+  const [isRendered, setIsRendered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Generate mermaid ID once per mount, not on every render
   const mermaidId = useMemo(
     () => id || `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    [id]
-  )
+    [id],
+  );
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
-    // Configure mermaid
-    mermaid.initialize(MERMAID_CONFIG)
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: theme === "dark" ? "dark" : "default",
+      securityLevel: "loose",
+      fontFamily: FONT_FAMILY,
+    });
 
     const renderDiagram = async () => {
       try {
-        if (!isMounted) return
+        if (!isMounted) return;
 
-        setError(null)
-        setIsRendered(false)
+        setError(null);
+        setIsRendered(false);
 
-        // Render the diagram
-        const { svg } = await mermaid.render(mermaidId, chart)
+        const { svg } = await mermaid.render(mermaidId, chart);
 
         if (isMounted) {
-          // Use React state instead of direct DOM manipulation
-          setSvgContent(svg)
-          setIsRendered(true)
+          setSvgContent(svg);
+          setIsRendered(true);
         }
       } catch (err) {
         if (isMounted) {
-          console.error('Mermaid rendering error:', err)
-          setError(err instanceof Error ? err.message : 'Failed to render diagram')
-          setIsRendered(false)
-          setSvgContent('')
+          console.error("Mermaid rendering error:", err);
+          setError(err instanceof Error ? err.message : "Failed to render diagram");
+          setIsRendered(false);
+          setSvgContent("");
         }
       }
-    }
+    };
 
-    renderDiagram()
+    renderDiagram();
 
-    // Cleanup function
     return () => {
-      isMounted = false
-    }
-  }, [chart, mermaidId])
+      isMounted = false;
+    };
+  }, [chart, mermaidId, theme]);
 
   if (error) {
     return (
-      <div className="my-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <div className="flex items-center mb-2">
-          <span className="text-red-600 mr-2">⚠️</span>
-          <span className="text-red-800 font-medium">Diagram Error</span>
+      <div
+        className="my-4 p-3 border"
+        style={{
+          backgroundColor: "var(--term-bg-surface)",
+          borderColor: "var(--term-border)",
+        }}
+      >
+        <div className="flex items-center mb-2 text-xs" style={{ color: "var(--term-red)" }}>
+          err: diagram render failed
         </div>
-        <pre className="text-red-700 text-sm bg-red-100 p-2 rounded overflow-x-auto">
+        <pre
+          className="text-[10px] p-2 overflow-x-auto"
+          style={{
+            backgroundColor: "var(--term-bg)",
+            color: "var(--term-red)",
+          }}
+        >
           {error}
         </pre>
         <details className="mt-2">
-          <summary className="text-red-600 text-sm cursor-pointer">Show diagram source</summary>
-          <pre className="text-gray-700 text-sm bg-gray-100 p-2 rounded mt-2 overflow-x-auto">
+          <summary
+            className="text-[10px] cursor-pointer"
+            style={{ color: "var(--term-text-muted)" }}
+          >
+            source
+          </summary>
+          <pre
+            className="text-[10px] p-2 mt-1 overflow-x-auto"
+            style={{
+              backgroundColor: "var(--term-bg)",
+              color: "var(--term-text)",
+            }}
+          >
             {chart}
           </pre>
         </details>
       </div>
-    )
+    );
   }
 
   return (
     <div className="my-4 flex justify-center">
       <div
-        className="w-full max-w-full overflow-x-auto bg-white border border-gray-200 rounded-lg p-4"
-        style={{ minHeight: '200px' }}
+        className="w-full max-w-full overflow-x-auto border p-4"
+        style={{
+          backgroundColor: "var(--term-bg-surface)",
+          borderColor: "var(--term-border)",
+          minHeight: "200px",
+        }}
       >
         {!isRendered && !error && (
-          <div className="flex items-center justify-center h-32 text-gray-500">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500 mr-2"></div>
-            Rendering diagram...
+          <div
+            className="flex items-center justify-center h-32 text-xs"
+            style={{ color: "var(--term-text-muted)" }}
+          >
+            rendering...
           </div>
         )}
         {isRendered && svgContent && (
-          <div
-            className="flex justify-center"
-            dangerouslySetInnerHTML={{ __html: svgContent }}
-          />
+          <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: svgContent }} />
         )}
       </div>
     </div>
-  )
-})
+  );
+});

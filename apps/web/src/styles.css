@@ -3,58 +3,167 @@
 
 @layer base {
   @font-face {
-    font-family: 'Inter';
+    font-family: "JetBrains Mono";
     font-style: normal;
-    font-weight: 400 700;
+    font-weight: 400;
     font-display: swap;
-    src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    src: url("https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/webfonts/JetBrainsMono-Regular.woff2")
+      format("woff2");
   }
 
   @font-face {
-    font-family: 'IBM Plex Serif';
+    font-family: "JetBrains Mono";
     font-style: normal;
-    font-weight: 400 700;
+    font-weight: 700;
     font-display: swap;
-    src: url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&display=swap');
+    src: url("https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/webfonts/JetBrainsMono-Bold.woff2")
+      format("woff2");
   }
 
   @font-face {
-    font-family: '0xProto';
-    src: url('https://cdn.jsdelivr.net/gh/0xType/0xProto@1.602/fonts/0xProto-Regular.woff2') format('woff2');
+    font-family: "0xProto";
+    src: url("https://cdn.jsdelivr.net/gh/0xType/0xProto@1.602/fonts/0xProto-Regular.woff2")
+      format("woff2");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
   }
 }
 
-.root {
-  isolation: isolate;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+/* Dark theme (default) */
+:root {
+  color-scheme: dark;
+
+  --term-bg: #151b23;
+  --term-bg-raised: #1c2330;
+  --term-bg-surface: #232b3a;
+  --term-bg-hover: #2a3345;
+  --term-border: #333d4d;
+  --term-border-focus: #4d5a6e;
+  --term-text: #c9d1d9;
+  --term-text-bright: #e6edf3;
+  --term-text-muted: #8b949e;
+  --term-green: #3fb950;
+  --term-red: #f85149;
+  --term-amber: #d29922;
+  --term-blue: #58a6ff;
+  --term-selection: rgba(63, 185, 80, 0.25);
+  --term-link-underline: rgba(63, 185, 80, 0.3);
+  --term-backdrop: rgba(0, 0, 0, 0.5);
+  --term-btn-bg: #e6edf3;
+  --term-btn-text: #151b23;
+  --term-btn-hover: #c9d1d9;
+  --term-btn-muted-bg: #232b3a;
+}
+
+/* Light theme */
+html.light {
+  color-scheme: light;
+
+  --term-bg: #f6f8fa;
+  --term-bg-raised: #ffffff;
+  --term-bg-surface: #eef1f5;
+  --term-bg-hover: #e4e9f0;
+  --term-border: #d0d7de;
+  --term-border-focus: #8b949e;
+  --term-text: #3d4752;
+  --term-text-bright: #1f2328;
+  --term-text-muted: #656d76;
+  --term-green: #1a7f37;
+  --term-red: #cf222e;
+  --term-amber: #9a6700;
+  --term-blue: #0969da;
+  --term-selection: rgba(26, 127, 55, 0.15);
+  --term-link-underline: rgba(26, 127, 55, 0.3);
+  --term-backdrop: rgba(0, 0, 0, 0.3);
+  --term-btn-bg: #1f2328;
+  --term-btn-text: #ffffff;
+  --term-btn-hover: #3d4752;
+  --term-btn-muted-bg: #e4e9f0;
 }
 
 * {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "JetBrains Mono", "0xProto", "SF Mono", Monaco, "Cascadia Code", Consolas, "Courier New",
+    monospace;
 }
 
-code, pre, .font-mono {
-  font-family: '0xProto', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+code,
+pre,
+.font-mono,
+.prose code,
+.prose pre,
+.prose pre code,
+.shiki,
+.shiki code,
+.shiki pre,
+.shiki span {
+  font-family:
+    "0xProto", "JetBrains Mono", "SF Mono", Monaco, "Cascadia Code", Consolas, "Courier New",
+    monospace !important;
 }
 
-/* Override Tailwind Typography prose styles for code elements */
-.prose code {
-  font-family: '0xProto', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--term-border);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--term-border-focus);
+}
+
+.prose-invert {
+  --tw-prose-body: var(--term-text);
+  --tw-prose-headings: var(--term-text-bright);
+  --tw-prose-links: var(--term-green);
+  --tw-prose-bold: var(--term-text-bright);
+  --tw-prose-code: var(--term-green);
+  --tw-prose-pre-code: var(--term-text);
+  --tw-prose-pre-bg: var(--term-bg);
+  --tw-prose-quotes: var(--term-text);
+  --tw-prose-quote-borders: var(--term-border);
+  --tw-prose-counters: var(--term-text-muted);
+  --tw-prose-bullets: var(--term-text-muted);
+  --tw-prose-hr: var(--term-border);
+  --tw-prose-th-borders: var(--term-border);
+  --tw-prose-td-borders: var(--term-border);
 }
 
 .prose pre {
-  font-family: '0xProto', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+  margin: 0;
 }
 
-.prose pre code {
-  font-family: '0xProto', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+.prose .shiki,
+.prose .shiki pre {
+  background-color: var(--term-bg-surface) !important;
 }
 
-/* Override Shiki's inline styles to use our font */
-.shiki, .shiki code, .shiki pre, .shiki span {
-  font-family: '0xProto', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
+@media (max-width: 767px) {
+  .prose {
+    font-size: 0.8125rem;
+    line-height: 1.65;
+  }
+  .prose h1 {
+    font-size: 1.4em;
+  }
+  .prose h2 {
+    font-size: 1.2em;
+  }
+  .prose h3 {
+    font-size: 1.05em;
+  }
+  .prose pre,
+  .prose code {
+    font-size: 0.7rem;
+  }
 }
 
+::selection {
+  background: var(--term-selection);
+  color: var(--term-text-bright);
+}

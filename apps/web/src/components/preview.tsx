@@ -1,172 +1,189 @@
-import React, { useEffect, useState, memo } from 'react'
-import type { ReactNode } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { highlightCode } from '../utils/highlighter'
-import { Mermaid } from './mermaid'
+import React, { useEffect, useState, memo } from "react";
+import type { ReactNode } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { highlightCode } from "../utils/highlighter";
+import { Mermaid } from "./mermaid";
+import { useTheme } from "../hooks/use-theme";
 
 // Utility function to generate ID from heading text
 function generateHeadingId(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
 }
 
 // Custom heading components with IDs for anchor links
 function HeadingRenderer({ level, children }: { level: number; children: ReactNode }) {
-  const text = React.Children.toArray(children).join('')
-  const id = generateHeadingId(text)
+  const text = React.Children.toArray(children).join("");
+  const id = generateHeadingId(text);
 
-  const HeadingTag = `h${level}` as keyof React.JSX.IntrinsicElements
+  const HeadingTag = `h${level}` as keyof React.JSX.IntrinsicElements;
 
   return (
     <HeadingTag id={id} className={`heading-${level}`}>
       {children}
     </HeadingTag>
-  )
+  );
 }
 
 // Custom link component with smooth scrolling for anchor links
 function LinkRenderer({ href, children }: { href?: string; children: ReactNode }) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (href?.startsWith('#')) {
-      e.preventDefault()
-      const targetId = href.slice(1) // Remove the # prefix
-      const targetElement = document.getElementById(targetId)
+    if (href?.startsWith("#")) {
+      e.preventDefault();
+      const targetId = href.slice(1);
+      const targetElement = document.getElementById(targetId);
 
       if (targetElement) {
-        // Get header height dynamically
-        const header = document.querySelector('header')
-        const headerHeight = header ? header.offsetHeight : 80 // fallback to 80px
+        const header = document.querySelector("header");
+        const headerHeight = header ? header.offsetHeight : 80;
+        const offset = headerHeight + 24;
 
-        // Add extra padding for better visual spacing (24px)
-        const offset = headerHeight + 24
+        const elementPosition = targetElement.offsetTop;
+        const offsetPosition = elementPosition - offset;
 
-        // Calculate the target position with offset
-        const elementPosition = targetElement.offsetTop
-        const offsetPosition = elementPosition - offset
-
-        // Smooth scroll to the adjusted position
         window.scrollTo({
           top: offsetPosition,
-          behavior: 'smooth'
-        })
+          behavior: "smooth",
+        });
       }
     }
-  }
+  };
 
   return (
     <a
       href={href}
       onClick={handleClick}
-      className="text-slate-900 hover:text-slate-700 underline decoration-slate-900/30 hover:decoration-slate-700/50 transition-colors"
+      className="underline transition-colors"
+      style={{
+        color: "var(--term-green)",
+        textDecorationColor: "var(--term-link-underline)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.textDecorationColor = "var(--term-green)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.textDecorationColor = "var(--term-link-underline)";
+      }}
     >
       {children}
     </a>
-  )
+  );
 }
 
 interface PreviewProps {
-  markdown: string
+  markdown: string;
 }
 
 interface CodeBlockProps {
-  children?: ReactNode
-  className?: string
+  children?: ReactNode;
+  className?: string;
 }
 
-// Pre-defined wrapper components (stable references)
 function PreWrapper({ children }: { children?: ReactNode }) {
-  return <div>{children}</div>
+  return <div>{children}</div>;
 }
 
 function H1Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={1} children={children} />
+  return <HeadingRenderer level={1}>{children}</HeadingRenderer>;
 }
 
 function H2Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={2} children={children} />
+  return <HeadingRenderer level={2}>{children}</HeadingRenderer>;
 }
 
 function H3Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={3} children={children} />
+  return <HeadingRenderer level={3}>{children}</HeadingRenderer>;
 }
 
 function H4Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={4} children={children} />
+  return <HeadingRenderer level={4}>{children}</HeadingRenderer>;
 }
 
 function H5Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={5} children={children} />
+  return <HeadingRenderer level={5}>{children}</HeadingRenderer>;
 }
 
 function H6Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={6} children={children} />
+  return <HeadingRenderer level={6}>{children}</HeadingRenderer>;
 }
 
 function LinkWrapper({ href, children }: { href?: string; children?: ReactNode }) {
-  return <LinkRenderer href={href} children={children} />
+  return <LinkRenderer href={href}>{children}</LinkRenderer>;
 }
 
 const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlockProps) {
-  const [highlightedCode, setHighlightedCode] = useState<string>('')
+  const [highlightedCode, setHighlightedCode] = useState<string>("");
 
-  const code = String(children).replace(/\n$/, '')
+  const code = String(children).replace(/\n$/, "");
 
-  // Check if this is a code block or inline code
-  // Code blocks either have language- class OR contain newlines
-  const isCodeBlock = className?.startsWith('language-') || code.includes('\n')
+  const isCodeBlock = className?.startsWith("language-") || code.includes("\n");
 
-  // Check if this is a mermaid diagram
-  const language = className?.replace('language-', '') || 'text'
-  const isMermaid = language === 'mermaid'
+  const language = className?.replace("language-", "") || "text";
+  const isMermaid = language === "mermaid";
 
   useEffect(() => {
-    if (!isCodeBlock || isMermaid) return
+    if (!isCodeBlock || isMermaid) return;
 
     highlightCode(code, language)
       .then(setHighlightedCode)
       .catch(() => {
-        // Fallback to plain code block if highlighting fails
-        setHighlightedCode(`<pre><code>${code}</code></pre>`)
-      })
-  }, [code, language, isCodeBlock, isMermaid])
+        setHighlightedCode(`<pre><code>${code}</code></pre>`);
+      });
+  }, [code, language, isCodeBlock, isMermaid]);
 
-  // Inline code - just return a styled span
+  // Inline code
   if (!isCodeBlock) {
     return (
-      <code className="bg-slate-100 px-2 py-0.5 rounded text-sm font-mono text-slate-700">
+      <code
+        className="px-1.5 py-0.5 text-xs font-mono"
+        style={{
+          backgroundColor: "var(--term-bg-surface)",
+          color: "var(--term-green)",
+          border: "1px solid var(--term-border)",
+        }}
+      >
         {children}
       </code>
-    )
+    );
   }
 
-  // Mermaid diagram - use Mermaid component
+  // Mermaid diagram
   if (isMermaid) {
-    return <Mermaid chart={code} />
+    return <Mermaid chart={code} />;
   }
 
-  // Code block - use syntax highlighting
+  // Code block - loading fallback
   if (!highlightedCode) {
     return (
-      <pre className="bg-slate-50 p-4 rounded-lg border border-slate-200 overflow-x-auto">
-        <code className="text-sm font-mono">{children}</code>
+      <pre
+        className="p-4 overflow-x-auto text-xs font-mono"
+        style={{
+          backgroundColor: "var(--term-bg-surface)",
+          border: "1px solid var(--term-border)",
+        }}
+      >
+        <code style={{ color: "var(--term-text)" }}>{children}</code>
       </pre>
-    )
+    );
   }
 
   return (
     <div
-      className="my-4 overflow-x-auto rounded-lg border border-slate-200"
+      className="my-4 overflow-x-auto"
+      style={{
+        border: "1px solid var(--term-border)",
+        backgroundColor: "var(--term-bg-surface)",
+      }}
       dangerouslySetInnerHTML={{ __html: highlightedCode }}
     />
-  )
-})
+  );
+});
 
-// Stable components object defined at module level
 const MARKDOWN_COMPONENTS = {
   code: CodeBlock,
   pre: PreWrapper,
@@ -176,33 +193,35 @@ const MARKDOWN_COMPONENTS = {
   h4: H4Wrapper,
   h5: H5Wrapper,
   h6: H6Wrapper,
-  a: LinkWrapper
-}
+  a: LinkWrapper,
+};
 
-// Stable plugins array defined at module level
-const MARKDOWN_PLUGINS = [remarkGfm]
+const MARKDOWN_PLUGINS = [remarkGfm];
 
 export const Preview = memo(function Preview({ markdown }: PreviewProps) {
+  const { theme } = useTheme();
+
   return (
-    <div className="
-      h-full overflow-y-auto
-      bg-white border border-slate-200
-      p-6 rounded-xl
-    ">
+    <div
+      className="h-full overflow-y-auto p-4"
+      style={{
+        backgroundColor: "var(--term-bg-raised)",
+        border: "1px solid var(--term-border)",
+      }}
+    >
       {markdown ? (
-        <div className="prose prose-gray max-w-none">
+        <div className="prose prose-sm prose-invert max-w-none" key={theme}>
           <ReactMarkdown remarkPlugins={MARKDOWN_PLUGINS} components={MARKDOWN_COMPONENTS}>
             {markdown}
           </ReactMarkdown>
         </div>
       ) : (
-        <div className="flex items-center justify-center h-full text-slate-400">
-          <p className="text-center">
-            <span className="block text-2xl mb-2">📝</span>
-            Start typing markdown to see the preview...
+        <div className="flex items-center justify-center h-full">
+          <p className="text-center text-xs" style={{ color: "var(--term-text-muted)" }}>
+            // start typing to see preview
           </p>
         </div>
       )}
     </div>
-  )
-})
+  );
+});

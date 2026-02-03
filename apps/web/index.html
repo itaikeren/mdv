@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#151b23" />
     <title>Markdown Viewer</title>
+    <script>
+      // Prevent flash of wrong theme
+      (function() {
+        try {
+          var theme = localStorage.getItem('markdown-viewer-theme');
+          if (theme === 'light' || (!theme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+            document.documentElement.classList.add('light');
+            document.querySelector('meta[name="theme-color"]').content = '#f6f8fa';
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root" class="root"></div>

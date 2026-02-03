@@ -1,14 +1,15 @@
-import React, { useState, useCallback, memo } from 'react'
-import type { MarkdownFile } from '@markdown-viewer/shared'
-import logoSvg from '../../assets/mdv_logo.svg'
+import React, { useState, useCallback, memo } from "react";
+import type { MarkdownFile } from "@markdown-viewer/shared";
+import { TermButton } from "./term-button";
 
 interface FileSidebarProps {
-  files: MarkdownFile[]
-  activeFileId: string | null
-  onFileSelect: (fileId: string) => void
-  onFileCreate: () => void
-  onFileDelete: (fileId: string) => void
-  onFileRename: (fileId: string, newName: string) => void
+  files: MarkdownFile[];
+  activeFileId: string | null;
+  onFileSelect: (fileId: string) => void;
+  onFileCreate: () => void;
+  onFileDelete: (fileId: string) => void;
+  onFileRename: (fileId: string, newName: string) => void;
+  onFileImport?: () => void;
 }
 
 export const FileSidebar = memo(function FileSidebar({
@@ -18,140 +19,217 @@ export const FileSidebar = memo(function FileSidebar({
   onFileCreate,
   onFileDelete,
   onFileRename,
+  onFileImport,
 }: FileSidebarProps) {
-  const [editingFileId, setEditingFileId] = useState<string | null>(null)
-  const [editingName, setEditingName] = useState('')
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const handleStartEdit = useCallback((file: MarkdownFile) => {
-    setEditingFileId(file.id)
-    setEditingName(file.name)
-  }, [])
+    setEditingFileId(file.id);
+    setEditingName(file.name);
+  }, []);
 
-  const handleSaveEdit = useCallback((fileId: string) => {
-    if (editingName.trim()) {
-      onFileRename(fileId, editingName.trim())
-    }
-    setEditingFileId(null)
-    setEditingName('')
-  }, [editingName, onFileRename])
+  const handleSaveEdit = useCallback(
+    (fileId: string) => {
+      if (editingName.trim()) {
+        onFileRename(fileId, editingName.trim());
+      }
+      setEditingFileId(null);
+      setEditingName("");
+    },
+    [editingName, onFileRename],
+  );
 
   const handleCancelEdit = useCallback(() => {
-    setEditingFileId(null)
-    setEditingName('')
-  }, [])
+    setEditingFileId(null);
+    setEditingName("");
+  }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, fileId: string) => {
-    if (e.key === 'Enter') {
-      handleSaveEdit(fileId)
-    } else if (e.key === 'Escape') {
-      handleCancelEdit()
-    }
-  }, [handleSaveEdit, handleCancelEdit])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, fileId: string) => {
+      if (e.key === "Enter") {
+        handleSaveEdit(fileId);
+      } else if (e.key === "Escape") {
+        handleCancelEdit();
+      }
+    },
+    [handleSaveEdit, handleCancelEdit],
+  );
 
   return (
-    <div className="h-full flex flex-col bg-slate-50">
+    <div className="h-full flex flex-col" style={{ backgroundColor: "var(--term-bg)" }}>
       {/* Header */}
-      <div className="flex-shrink-0 p-3 pb-2 md:p-4 md:pb-3">
-        <div className="flex items-center gap-1.5 md:gap-2 mb-4">
-          <img src={logoSvg} alt="Markdown Viewer Logo" className="h-4 md:h-5 w-auto" />
-          <h2 className="text-base md:text-lg font-medium text-slate-900" style={{ fontFamily: "'IBM Plex Serif', serif" }}>
-            Markdown Viewer
-          </h2>
+      <div className="flex-shrink-0 p-3 md:p-3">
+        <div className="flex items-center gap-1.5 mb-3">
+          <span className="text-xs font-medium" style={{ color: "var(--term-green)" }}>
+            ~
+          </span>
+          <span className="text-xs font-medium" style={{ color: "var(--term-text-bright)" }}>
+            mdv
+          </span>
         </div>
-        <button
-          onClick={onFileCreate}
-          className="
-            w-full px-4 py-2.5 bg-black text-white rounded-lg
-            hover:bg-slate-800 transition-colors
-            flex items-center gap-2
-            text-sm font-medium
-          "
-        >
-          <span className="text-base">+</span>
-          New File
-        </button>
+        <div className="flex gap-1.5">
+          <TermButton onClick={onFileCreate} fullWidth className="text-left">
+            + new_file
+          </TermButton>
+          {onFileImport && (
+            <button
+              onClick={onFileImport}
+              className="p-1.5 transition-colors cursor-pointer flex-shrink-0"
+              title="Import .md file"
+              style={{ color: "var(--term-text)", border: "1px solid var(--term-border)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--term-text-bright)";
+                e.currentTarget.style.borderColor = "var(--term-green)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--term-text)";
+                e.currentTarget.style.borderColor = "var(--term-border)";
+              }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M12 20V8m0 0l-4 4m4-4l4 4M4 6h16"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* File List */}
-      <div className="flex-1 overflow-y-auto px-3 md:px-4">
+      <div className="flex-1 overflow-y-auto px-2 md:px-2">
         {files.length === 0 ? (
-          <div className="text-center text-slate-400 py-12 px-4">
-            <p className="text-sm">No files yet</p>
-            <p className="text-xs mt-1 text-slate-400">Click "New File" to get started</p>
+          <div className="text-center py-8 px-3">
+            <p className="text-[10px]" style={{ color: "var(--term-text-muted)" }}>
+              // empty
+            </p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-px">
             {files.map((file) => (
               <div
                 key={file.id}
                 onClick={() => onFileSelect(file.id)}
-                className={`
-                  group relative rounded-lg
-                  ${activeFileId === file.id
-                    ? 'bg-white border border-slate-200'
-                    : 'hover:bg-white/50'
-                  }
-                `}
+                className="group relative cursor-pointer"
               >
                 {editingFileId === file.id ? (
-                  <div className="p-2">
+                  <div className="p-1.5">
                     <input
                       type="text"
                       value={editingName}
                       onChange={(e) => setEditingName(e.target.value)}
                       onKeyDown={(e) => handleKeyDown(e, file.id)}
                       onBlur={() => handleSaveEdit(file.id)}
-                      className="
-                        w-full px-2 py-1 text-sm border border-blue-500 rounded
-                        focus:outline-none focus:ring-2 focus:ring-blue-500
-                      "
+                      className="w-full px-2 py-1 text-xs outline-none"
+                      style={{
+                        backgroundColor: "var(--term-bg-surface)",
+                        color: "var(--term-text-bright)",
+                        border: "1px solid var(--term-green)",
+                      }}
                       autoFocus
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 p-3 md:p-2">
+                  <div
+                    className="flex items-center gap-1.5 px-2 py-1.5 md:py-1 transition-colors"
+                    style={{
+                      backgroundColor:
+                        activeFileId === file.id ? "var(--term-bg-surface)" : "transparent",
+                      borderLeft:
+                        activeFileId === file.id
+                          ? "2px solid var(--term-green)"
+                          : "2px solid transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (activeFileId !== file.id) {
+                        e.currentTarget.style.backgroundColor = "var(--term-bg-hover)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeFileId !== file.id) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }
+                    }}
+                  >
                     <button
                       onClick={() => onFileSelect(file.id)}
-                      className="flex-1 text-left truncate text-sm"
+                      className="flex-1 text-left truncate text-xs"
+                      style={{
+                        color:
+                          activeFileId === file.id ? "var(--term-text-bright)" : "var(--term-text)",
+                      }}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <svg className={`w-4 h-4 flex-shrink-0 ${activeFileId === file.id ? 'text-slate-700' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        <span className={`truncate ${activeFileId === file.id ? 'font-medium text-slate-900' : 'text-slate-600'}`}>
-                          {file.name}
-                        </span>
-                      </div>
+                      <span className="truncate block">{file.name}</span>
                     </button>
 
-                    {/* Actions (visible on hover or when active) */}
-                    <div className={`flex items-center gap-1 flex-shrink-0 ${activeFileId === file.id ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`}>
+                    {/* Actions */}
+                    <div
+                      className={`flex items-center gap-0.5 flex-shrink-0 ${activeFileId === file.id ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"}`}
+                    >
                       <button
                         onClick={(e) => {
-                          e.stopPropagation()
-                          handleStartEdit(file)
+                          e.stopPropagation();
+                          handleStartEdit(file);
                         }}
-                        className="p-2 md:p-1 hover:bg-slate-200 rounded transition-colors"
+                        className="p-1 transition-colors"
                         title="Rename file"
                         type="button"
+                        style={{ color: "var(--term-text)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "var(--term-text-bright)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--term-text)";
+                        }}
                       >
-                        <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                          />
                         </svg>
                       </button>
                       <button
                         onClick={(e) => {
-                          e.stopPropagation()
+                          e.stopPropagation();
                           if (window.confirm(`Delete "${file.name}"?`)) {
-                            onFileDelete(file.id)
+                            onFileDelete(file.id);
                           }
                         }}
-                        className="p-2 md:p-1 hover:bg-red-100 rounded transition-colors"
+                        className="p-1 transition-colors"
                         title="Delete file"
                         type="button"
+                        style={{ color: "var(--term-text)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "var(--term-red)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--term-text)";
+                        }}
                       >
-                        <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -163,10 +241,13 @@ export const FileSidebar = memo(function FileSidebar({
         )}
       </div>
 
-      {/* Footer with file count */}
-      <div className="flex-shrink-0 p-4 text-xs text-slate-400 text-center">
-        {files.length} {files.length === 1 ? 'file' : 'files'}
+      {/* Footer */}
+      <div
+        className="flex-shrink-0 p-3 text-[10px] text-center"
+        style={{ color: "var(--term-text-muted)" }}
+      >
+        {files.length} {files.length === 1 ? "file" : "files"}
       </div>
     </div>
-  )
-})
+  );
+});

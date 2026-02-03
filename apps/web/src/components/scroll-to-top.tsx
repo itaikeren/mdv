@@ -1,68 +1,53 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from "react";
 
 export function ScrollToTopButton() {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Show button when page is scrolled down
   useEffect(() => {
     const toggleVisibility = () => {
       if (window.pageYOffset > 300) {
-        setIsVisible(true)
+        setIsVisible(true);
       } else {
-        setIsVisible(false)
+        setIsVisible(false);
       }
-    }
+    };
 
-    window.addEventListener('scroll', toggleVisibility)
+    window.addEventListener("scroll", toggleVisibility);
 
     return () => {
-      window.removeEventListener('scroll', toggleVisibility)
-    }
-  }, [])
+      window.removeEventListener("scroll", toggleVisibility);
+    };
+  }, []);
 
-  // Scroll to top function
   const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
-    })
-  }, [])
+      behavior: "smooth",
+    });
+  }, []);
 
   if (!isVisible) {
-    return null
+    return null;
   }
 
   return (
     <button
       onClick={scrollToTop}
-      className="
-        fixed bottom-6 right-6 z-40
-        w-12 h-12
-        bg-black hover:bg-slate-800
-        text-white
-        rounded-full
-        shadow-lg hover:shadow-xl
-        transition-all duration-300 ease-in-out
-        transform hover:scale-110
-        flex items-center justify-center
-        group
-      "
+      className="fixed bottom-4 right-4 z-40 w-8 h-8 flex items-center justify-center transition-colors cursor-pointer border text-xs"
+      style={{
+        backgroundColor: "var(--term-btn-bg)",
+        color: "var(--term-btn-text)",
+        borderColor: "transparent",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = "var(--term-btn-hover)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = "var(--term-btn-bg)";
+      }}
       aria-label="Scroll to top"
     >
-      <svg
-        className="w-6 h-6 transition-transform duration-300 group-hover:-translate-y-1"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M5 10l7-7m0 0l7 7m-7-7v18"
-        />
-      </svg>
+      ^
     </button>
-  )
+  );
 }
