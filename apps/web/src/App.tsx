@@ -1,6 +1,6 @@
-import { Routes, Route } from 'react-router-dom'
-import { MainApp } from './pages/main-app'
-import { ShareView } from './pages/share-view'
+import { Routes, Route } from "react-router-dom";
+import { MainApp } from "./pages/main-app";
+import { ShareView } from "./pages/share-view";
 
 function App() {
   return (
@@ -8,7 +8,7 @@ function App() {
       <Route path="/" element={<MainApp />} />
       <Route path="/share/:token" element={<ShareView />} />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;
