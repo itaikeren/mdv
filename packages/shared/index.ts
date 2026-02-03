@@ -11,9 +11,26 @@ export interface Share {
   id: string
   fileId: string
   shareToken: string
+  commentsEnabled: boolean
   createdAt: Date
   expiresAt: Date | null
   viewCount: number
+}
+
+export interface Comment {
+  id: string
+  shareId: string
+  userId: string
+  userEmail: string
+  content: string
+  parentId: string | null
+  createdAt: Date
+}
+
+export interface CreateCommentInput {
+  shareId: string
+  content: string
+  parentId?: string
 }
 
 export interface User {
@@ -35,6 +52,7 @@ export interface UpdateFileInput {
 export interface CreateShareInput {
   fileId: string
   expiresAt?: Date
+  commentsEnabled?: boolean
 }
 
 export interface ShareResponse {

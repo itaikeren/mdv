@@ -4,6 +4,7 @@ import { cors } from 'hono/cors'
 import { clerkMiddleware } from './middleware/auth.js'
 import filesRoutes from './routes/files.js'
 import sharesRoutes from './routes/shares.js'
+import commentsRoutes from './routes/comments.js'
 
 // Create Hono app
 const app = new Hono().basePath('/api')
@@ -23,6 +24,7 @@ app.get('/health', (c) => {
 // Routes
 app.route('/files', filesRoutes)
 app.route('/shares', sharesRoutes)
+app.route('/comments', commentsRoutes)
 
 // Export for Vercel Functions
 export const GET = handle(app)

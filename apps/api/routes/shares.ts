@@ -36,6 +36,7 @@ app.post('/', async (c) => {
       .values({
         fileId: body.fileId,
         shareToken,
+        commentsEnabled: body.commentsEnabled ?? false,
         expiresAt: body.expiresAt || null,
       })
       .returning()
@@ -85,6 +86,8 @@ app.get('/:token', async (c) => {
 
     return c.json({
       file: share.file,
+      shareId: share.id,
+      commentsEnabled: share.commentsEnabled,
       viewCount: share.viewCount + 1,
     })
   } catch (error) {
@@ -123,6 +126,47 @@ app.get('/file/:fileId', async (c) => {
   } catch (error) {
     console.error('Error fetching shares:', error)
     return c.json({ error: 'Failed to fetch shares' }, 500)
+  }
+})
+
+// Update a share (toggle comments)
+app.patch('/:id', async (c) => {
+  const { error, auth } = await requireAuth(c)
+  if (error) return error
+
+  const { id } = c.req.param()
+
+  try {
+    const body = await c.req.json<{ commentsEnabled?: boolean }>()
+
+    // Get the share and verify ownership through file
+    const share = await db.query.shares.findFirst({
+      where: eq(shares.id, id),
+      with: {
+        file: true,
+      },
+    })
+
+    if (!share) {
+      return c.json({ error: 'Share not found' }, 404)
+    }
+
+    if (share.file.userId !== auth.userId) {
+      return c.json({ error: 'Unauthorized' }, 403)
+    }
+
+    const [updated] = await db
+      .update(shares)
+      .set({
+        commentsEnabled: body.commentsEnabled ?? share.commentsEnabled,
+      })
+      .where(eq(shares.id, id))
+      .returning()
+
+    return c.json(updated)
+  } catch (error) {
+    console.error('Error updating share:', error)
+    return c.json({ error: 'Failed to update share' }, 500)
   }
 })
 
