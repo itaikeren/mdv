@@ -101,19 +101,23 @@ markdown-viewer/
 
 ```bash
 # Development
-pnpm dev              # Start frontend dev server
+pnpm dev              # Start frontend + API dev servers
 
 # Build
 pnpm build           # Build for production
 
-# Database
+# Linting & Formatting (oxlint + oxfmt)
+pnpm lint            # Run oxlint on web
+pnpm -F @markdown-viewer/web format       # Format web source
+pnpm -F @markdown-viewer/web format:check # Check web formatting
+pnpm -F @markdown-viewer/api lint         # Lint API
+pnpm -F @markdown-viewer/api format       # Format API source
+
+# Database (from apps/api)
 cd apps/api
 pnpm db:push         # Push schema to database
 pnpm db:studio       # Open Drizzle Studio
 pnpm db:generate     # Generate migrations
-
-# Linting
-pnpm lint            # Run ESLint
 ```
 
 ## Deployment
