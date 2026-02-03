@@ -1,0 +1,25 @@
+{
+  "plugins": ["typescript", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "no-console": ["warn", { "allow": ["warn", "error", "info", "debug"] }],
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_+", "varsIgnorePattern": "^_+" }
+    ],
+    "import/no-self-import": "error",
+    "import/no-cycle": "error",
+    "func-style": "off",
+    "sort-imports": "off",
+    "sort-keys": "off",
+    "no-magic-numbers": "off",
+    "id-length": "off",
+    "no-ternary": "off",
+    "prefer-destructuring": "off"
+  },
+  "ignorePatterns": ["dist/**", "node_modules/**"]
+}
