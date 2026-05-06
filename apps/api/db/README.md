@@ -22,6 +22,7 @@ pnpm db:push
 ```
 
 **What this does:**
+
 - Reads schema from `db/schema.ts`
 - Creates tables in your Neon database
 - No migration files generated (direct push)
@@ -37,16 +38,16 @@ When you want to add a completely new table:
 Edit `db/schema.ts`:
 
 ```typescript
-export const myNewTable = pgTable('my_new_table', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const myNewTable = pgTable("my_new_table", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 // Add relations if needed
 export const myNewTableRelations = relations(myNewTable, ({ one, many }) => ({
   // Define relations here
-}))
+}));
 ```
 
 ### Step 2: Update shared types (if needed)
@@ -55,23 +56,26 @@ Edit `packages/shared/index.ts`:
 
 ```typescript
 export interface MyNewTable {
-  id: string
-  name: string
-  createdAt: Date
+  id: string;
+  name: string;
+  createdAt: Date;
 }
 ```
 
 ### Step 3: Choose your approach
 
 **Option A: Direct Push (Development)**
+
 ```bash
 pnpm db:push
 ```
+
 - Fast and simple
 - No migration files
 - Good for rapid development
 
 **Option B: Generate Migration (Production)**
+
 ```bash
 # Generate migration file
 pnpm db:generate
@@ -81,6 +85,7 @@ pnpm db:generate
 # Apply migration
 pnpm db:migrate
 ```
+
 - Creates migration history
 - Good for production/team environments
 - Allows rollback
@@ -96,27 +101,31 @@ When changing columns, constraints, or indexes:
 Edit `db/schema.ts`:
 
 ```typescript
-export const files = pgTable('files', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  name: text('name').notNull(),
-  content: text('content').notNull(),
+export const files = pgTable("files", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull(),
+  content: text("content").notNull(),
   // ✨ Add new column
-  description: text('description'),
+  description: text("description"),
   // ✨ Modify existing column
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 ```
 
 ### Step 2: Push changes
 
 **For development:**
+
 ```bash
 pnpm db:push
 ```
 
 **For production:**
+
 ```bash
 pnpm db:generate
 pnpm db:migrate
@@ -135,10 +144,11 @@ export const filesRelations = relations(files, ({ one, many }) => ({
     references: [users.id],
   }),
   shares: many(shares),
-}))
+}));
 ```
 
 After adding relations:
+
 - No database push needed
 - Relations only affect TypeScript queries
 
@@ -178,10 +188,10 @@ This opens a web UI at `https://local.drizzle.studio`
 
 ```typescript
 // In schema.ts
-export const files = pgTable('files', {
+export const files = pgTable("files", {
   // ... existing columns
-  viewCount: integer('view_count').default(0).notNull(),
-})
+  viewCount: integer("view_count").default(0).notNull(),
+});
 ```
 
 ```bash
@@ -207,12 +217,12 @@ pnpm db:push
 ### Workflow: Add foreign key
 
 ```typescript
-export const posts = pgTable('posts', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  authorId: text('author_id')
-    .references(() => users.id, { onDelete: 'cascade' })
+export const posts = pgTable("posts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  authorId: text("author_id")
+    .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-})
+});
 ```
 
 ```bash
@@ -223,12 +233,12 @@ pnpm db:push
 
 ## 🛠️ Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm db:push` | Push schema changes directly to database (no migrations) |
-| `pnpm db:generate` | Generate migration files from schema changes |
-| `pnpm db:migrate` | Apply pending migrations to database |
-| `pnpm db:studio` | Open Drizzle Studio (database GUI) |
+| Command            | Description                                              |
+| ------------------ | -------------------------------------------------------- |
+| `pnpm db:push`     | Push schema changes directly to database (no migrations) |
+| `pnpm db:generate` | Generate migration files from schema changes             |
+| `pnpm db:migrate`  | Apply pending migrations to database                     |
+| `pnpm db:studio`   | Open Drizzle Studio (database GUI)                       |
 
 ---
 
@@ -237,6 +247,7 @@ pnpm db:push
 ### On Vercel
 
 Environment variables are set in Vercel dashboard:
+
 - `DATABASE_URL` - Your Neon connection string
 - `CLERK_PUBLISHABLE_KEY` - Clerk publishable key
 - `CLERK_SECRET_KEY` - Clerk secret key
@@ -244,12 +255,14 @@ Environment variables are set in Vercel dashboard:
 ### Running Migrations in Production
 
 **Option 1: Use `db:push` in CI/CD**
+
 ```yaml
 # In your deployment workflow
 - run: pnpm --filter @markdown-viewer/api db:push
 ```
 
 **Option 2: Run locally before deploy**
+
 ```bash
 # Point to production database
 DATABASE_URL=<production-url> pnpm db:push
@@ -280,11 +293,13 @@ DATABASE_URL=<production-url> pnpm db:push
 ## 📝 Current Schema
 
 ### Tables
+
 1. **users** - Synced from Clerk authentication
 2. **files** - User's markdown files
 3. **shares** - Share links for files
 
 ### Relationships
+
 - `users` → `files` (one-to-many, cascade delete)
 - `files` → `shares` (one-to-many, cascade delete)
 
@@ -293,6 +308,7 @@ DATABASE_URL=<production-url> pnpm db:push
 ## 🆘 Troubleshooting
 
 **Error: DATABASE_URL is not set**
+
 ```bash
 # Verify .env.local exists in monorepo root
 cat ../../.env.local
@@ -301,18 +317,21 @@ cat ../../.env.local
 ```
 
 **Error: Connection refused**
+
 ```bash
 # Check Neon database is running
 # Verify connection string is correct
 ```
 
 **Error: Table already exists**
+
 ```bash
 # Your database already has tables
 # db:push will sync the schema, not recreate
 ```
 
 **Schema out of sync**
+
 ```bash
 # Reset database (⚠️ DELETES ALL DATA)
 # 1. Drop all tables in Neon dashboard
