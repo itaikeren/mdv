@@ -12,6 +12,7 @@ export interface Share {
   fileId: string
   shareToken: string
   commentsEnabled: boolean
+  allowAnonymousComments: boolean
   createdAt: Date
   expiresAt: Date | null
   viewCount: number
@@ -20,7 +21,7 @@ export interface Share {
 export interface Comment {
   id: string
   shareId: string
-  userId: string
+  userId: string | null
   userEmail: string
   content: string
   parentId: string | null
@@ -31,6 +32,7 @@ export interface CreateCommentInput {
   shareId: string
   content: string
   parentId?: string
+  authorName?: string
 }
 
 export interface User {
@@ -53,6 +55,7 @@ export interface CreateShareInput {
   fileId: string
   expiresAt?: Date
   commentsEnabled?: boolean
+  allowAnonymousComments?: boolean
 }
 
 export interface ShareResponse {

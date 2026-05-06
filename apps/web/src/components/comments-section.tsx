@@ -10,7 +10,11 @@ interface CommentsSectionProps {
   shareId: string;
   fileOwnerId: string;
   commentsEnabled: boolean;
+  allowAnonymousComments: boolean;
 }
+
+const ANON_NAME_STORAGE_KEY = "mdv:anon-comment-name";
+const MAX_ANON_NAME_LENGTH = 50;
 
 const AUTHOR_COLORS_DARK = [
   "#3fb950", // green
@@ -82,7 +86,20 @@ function formatRelativeTime(date: Date): string {
   if (diffDays < 30) return `${diffDays}d ago`;
 
   const d = new Date(date);
-  const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const months = [
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+  ];
   return `${months[d.getMonth()]} ${d.getDate()}, ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
@@ -90,7 +107,10 @@ const REMARK_PLUGINS = [remarkGfm];
 
 function CommentBody({ content }: { content: string }) {
   return (
-    <div className="comment-body" style={{ fontSize: "0.75rem", lineHeight: 1.65, color: "var(--term-text)" }}>
+    <div
+      className="comment-body"
+      style={{ fontSize: "0.75rem", lineHeight: 1.65, color: "var(--term-text)" }}
+    >
       <ReactMarkdown
         remarkPlugins={REMARK_PLUGINS}
         components={{
@@ -108,7 +128,9 @@ function CommentBody({ content }: { content: string }) {
             </code>
           ),
           strong: ({ children }) => (
-            <strong style={{ color: "var(--term-text-bright)", fontWeight: 700 }}>{children}</strong>
+            <strong style={{ color: "var(--term-text-bright)", fontWeight: 700 }}>
+              {children}
+            </strong>
           ),
           em: ({ children }) => <em>{children}</em>,
           a: ({ href, children }) => (
@@ -148,6 +170,7 @@ function CommentItem({
   comment,
   isFileOwner,
   currentUserId,
+  canReply,
   shareId,
   isReply,
   parentAuthor,
@@ -157,6 +180,7 @@ function CommentItem({
   comment: Comment;
   isFileOwner: boolean;
   currentUserId: string | null | undefined;
+  canReply: boolean;
   shareId: string;
   isReply: boolean;
   parentAuthor?: string;
@@ -164,7 +188,7 @@ function CommentItem({
   theme: "dark" | "light";
 }) {
   const deleteComment = useDeleteComment();
-  const canDelete = currentUserId === comment.userId || isFileOwner;
+  const canDelete = (comment.userId !== null && currentUserId === comment.userId) || isFileOwner;
 
   const handleDelete = () => {
     if (confirm("Delete this comment?")) {
@@ -202,7 +226,7 @@ function CommentItem({
       </div>
       <CommentBody content={comment.content} />
       <div className="flex items-center gap-3" style={{ marginTop: "0.4rem" }}>
-        {!isReply && currentUserId && (
+        {!isReply && canReply && (
           <button
             onClick={() => onReply(comment.id)}
             className="flex items-center gap-1 cursor-pointer"
@@ -264,22 +288,36 @@ function ComposeBox({
   shareId,
   parentId,
   onCancel,
+  isAnonymous,
 }: {
   shareId: string;
   parentId?: string;
   onCancel?: () => void;
+  isAnonymous?: boolean;
 }) {
   const [content, setContent] = useState("");
+  const [authorName, setAuthorName] = useState(() => {
+    if (typeof window === "undefined" || !isAnonymous) return "";
+    return window.localStorage.getItem(ANON_NAME_STORAGE_KEY) ?? "";
+  });
   const createComment = useCreateComment();
 
+  const trimmedName = authorName.trim();
+  const canSubmit = content.trim().length > 0 && (!isAnonymous || trimmedName.length > 0);
+
   const handleSubmit = () => {
-    if (!content.trim()) return;
+    if (!canSubmit) return;
+
+    if (isAnonymous && typeof window !== "undefined") {
+      window.localStorage.setItem(ANON_NAME_STORAGE_KEY, trimmedName);
+    }
 
     createComment.mutate(
       {
         shareId,
         content: content.trim(),
         parentId,
+        ...(isAnonymous ? { authorName: trimmedName } : {}),
       },
       {
         onSuccess: () => {
@@ -323,7 +361,32 @@ function ComposeBox({
       >
         <span style={{ color: "var(--term-green)" }}>$</span>
         {parentId ? "reply" : "add_comment"}
+        {isAnonymous && (
+          <span style={{ marginLeft: "0.35rem", opacity: 0.7 }}>{"// anonymous"}</span>
+        )}
       </div>
+      {isAnonymous && (
+        <input
+          type="text"
+          value={authorName}
+          onChange={(e) => setAuthorName(e.target.value)}
+          placeholder="your name"
+          maxLength={MAX_ANON_NAME_LENGTH}
+          style={{
+            width: "100%",
+            background: "transparent",
+            border: "none",
+            borderBottom: "1px solid var(--term-border)",
+            color: "var(--term-text)",
+            fontFamily: "inherit",
+            fontSize: "0.75rem",
+            lineHeight: 1.6,
+            padding: "0.15rem 0",
+            marginBottom: "0.5rem",
+            outline: "none",
+          }}
+        />
+      )}
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -392,7 +455,7 @@ function ComposeBox({
           )}
           <button
             onClick={handleSubmit}
-            disabled={!content.trim() || createComment.isPending}
+            disabled={!canSubmit || createComment.isPending}
             className="cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               padding: "0.3rem 0.75rem",
@@ -421,13 +484,21 @@ function ComposeBox({
   );
 }
 
-export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: CommentsSectionProps) {
+export function CommentsSection({
+  shareId,
+  fileOwnerId,
+  commentsEnabled,
+  allowAnonymousComments,
+}: CommentsSectionProps) {
   const { userId, isSignedIn } = useAuth();
   const { theme } = useTheme();
   const { data: comments = [], isLoading } = useComments(shareId, true);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   const isFileOwner = userId === fileOwnerId;
+  const canCompose = commentsEnabled && (isSignedIn || allowAnonymousComments);
+  const canReply = canCompose;
+  const composeAsAnonymous = !isSignedIn && allowAnonymousComments;
 
   // Group comments: top-level and their replies
   const groupedComments = useMemo(() => {
@@ -455,15 +526,18 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
 
   return (
     <section style={{ marginTop: "2rem" }}>
-      <hr style={{ border: "none", borderTop: "1px solid var(--term-border)", marginBottom: "1.5rem" }} />
+      <hr
+        style={{
+          border: "none",
+          borderTop: "1px solid var(--term-border)",
+          marginBottom: "1.5rem",
+        }}
+      />
 
       {/* Header */}
-      <div
-        className="flex items-baseline justify-between"
-        style={{ marginBottom: "1.25rem" }}
-      >
+      <div className="flex items-baseline justify-between" style={{ marginBottom: "1.25rem" }}>
         <div style={{ fontSize: "0.75rem", color: "var(--term-text-muted)", fontWeight: 400 }}>
-          <span style={{ color: "var(--term-green)" }}>{"//"}  </span>
+          <span style={{ color: "var(--term-green)" }}>{"//"} </span>
           {comments.length} comment{comments.length !== 1 ? "s" : ""}
         </div>
       </div>
@@ -499,10 +573,10 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
       )}
 
       {/* Compose box or sign-in prompt (only when comments are enabled) */}
-      {commentsEnabled && (
-        isSignedIn ? (
+      {commentsEnabled &&
+        (canCompose ? (
           <div style={{ marginBottom: "1.5rem" }}>
-            <ComposeBox shareId={shareId} />
+            <ComposeBox shareId={shareId} isAnonymous={composeAsAnonymous} />
           </div>
         ) : (
           <div
@@ -514,7 +588,13 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
               textAlign: "center",
             }}
           >
-            <p style={{ fontSize: "0.75rem", color: "var(--term-text-muted)", marginBottom: "0.5rem" }}>
+            <p
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--term-text-muted)",
+                marginBottom: "0.5rem",
+              }}
+            >
               sign in to leave a comment
             </p>
             <SignInButton mode="modal">
@@ -541,17 +621,30 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
               </button>
             </SignInButton>
           </div>
-        )
-      )}
+        ))}
 
       {/* Comments list */}
       {isLoading ? (
-        <div style={{ textAlign: "center", padding: "1.5rem 0", fontSize: "0.75rem", color: "var(--term-text-muted)" }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "1.5rem 0",
+            fontSize: "0.75rem",
+            color: "var(--term-text-muted)",
+          }}
+        >
           loading comments...
         </div>
       ) : groupedComments.length === 0 ? (
         commentsEnabled ? (
-          <div style={{ textAlign: "center", padding: "1.5rem 0", fontSize: "0.75rem", color: "var(--term-text-muted)" }}>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "1.5rem 0",
+              fontSize: "0.75rem",
+              color: "var(--term-text-muted)",
+            }}
+          >
             {"// no comments yet"}
           </div>
         ) : null
@@ -574,6 +667,7 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
                   comment={comment}
                   isFileOwner={isFileOwner}
                   currentUserId={commentsEnabled ? userId : null}
+                  canReply={canReply}
                   shareId={shareId}
                   isReply={false}
                   onReply={setReplyingTo}
@@ -606,6 +700,7 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
                         comment={reply}
                         isFileOwner={isFileOwner}
                         currentUserId={commentsEnabled ? userId : null}
+                        canReply={canReply}
                         shareId={shareId}
                         isReply
                         parentAuthor={comment.userEmail}
@@ -618,7 +713,7 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
               )}
 
               {/* Reply compose box */}
-              {commentsEnabled && replyingTo === comment.id && isSignedIn && (
+              {canReply && replyingTo === comment.id && (
                 <div
                   style={{
                     marginLeft: "1rem",
@@ -631,6 +726,7 @@ export function CommentsSection({ shareId, fileOwnerId, commentsEnabled }: Comme
                   <ComposeBox
                     shareId={shareId}
                     parentId={comment.id}
+                    isAnonymous={composeAsAnonymous}
                     onCancel={() => setReplyingTo(null)}
                   />
                 </div>

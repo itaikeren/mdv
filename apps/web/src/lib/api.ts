@@ -63,7 +63,13 @@ export const sharesApi = {
 
   getByToken: async (
     token: string,
-  ): Promise<{ file: MarkdownFile; shareId: string; commentsEnabled: boolean; viewCount: number }> => {
+  ): Promise<{
+    file: MarkdownFile;
+    shareId: string;
+    commentsEnabled: boolean;
+    allowAnonymousComments: boolean;
+    viewCount: number;
+  }> => {
     const res = await fetch(`${API_BASE}/shares/${token}`);
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: "Request failed" }));
@@ -75,7 +81,10 @@ export const sharesApi = {
   getForFile: (fileId: string): Promise<Share[]> =>
     fetchWithAuth(`${API_BASE}/shares/file/${fileId}`),
 
-  update: (id: string, data: { commentsEnabled?: boolean }): Promise<Share> =>
+  update: (
+    id: string,
+    data: { commentsEnabled?: boolean; allowAnonymousComments?: boolean },
+  ): Promise<Share> =>
     fetchWithAuth(`${API_BASE}/shares/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),

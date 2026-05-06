@@ -33,8 +33,13 @@ export function useUpdateShare() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { commentsEnabled?: boolean } }) =>
-      sharesApi.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { commentsEnabled?: boolean; allowAnonymousComments?: boolean };
+    }) => sharesApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shares"] });
     },

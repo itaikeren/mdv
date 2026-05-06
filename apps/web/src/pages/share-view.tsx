@@ -67,7 +67,7 @@ export function ShareView() {
     );
   }
 
-  const { file, viewCount, shareId, commentsEnabled } = data;
+  const { file, viewCount, shareId, commentsEnabled, allowAnonymousComments } = data;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--term-bg)" }}>
@@ -94,9 +94,9 @@ export function ShareView() {
                 }}
               >
                 <span className="text-xs font-medium" style={{ color: "var(--term-green)" }}>
-            ~
-          </span>
-                {' '}mdv
+                  ~
+                </span>{" "}
+                mdv
               </Link>
               <span className="flex-shrink-0" style={{ color: "var(--term-border)" }}>
                 /
@@ -139,7 +139,12 @@ export function ShareView() {
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Preview markdown={file.content} />
-        <CommentsSection shareId={shareId} fileOwnerId={file.userId} commentsEnabled={commentsEnabled} />
+        <CommentsSection
+          shareId={shareId}
+          fileOwnerId={file.userId}
+          commentsEnabled={commentsEnabled}
+          allowAnonymousComments={allowAnonymousComments}
+        />
       </main>
 
       {/* Footer */}
