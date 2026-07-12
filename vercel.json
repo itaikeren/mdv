@@ -16,7 +16,7 @@
     },
     {
       "source": "/raw/:token",
-      "destination": "/api/raw/:token"
+      "destination": "/api/[[...path]]"
     },
     {
       "source": "/((?!api|raw/|assets|fonts).*)",

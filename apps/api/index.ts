@@ -12,8 +12,11 @@ import apiKeysRoutes from "./routes/api-keys.js";
 import usersRoutes from "./routes/users.js";
 import publicRoutes from "./routes/public.js";
 
-// Create Hono app
-const app = new Hono().basePath("/api");
+// API sub-app, mounted at /api on the root app below. A separate root app
+// exists so the pretty raw URL (/raw/:token) can be served OUTSIDE the /api
+// prefix: Vercel rewrites don't cascade, so /raw/:token is rewritten straight
+// to this function with its original path and must be matched at the top level.
+const app = new Hono();
 
 // The app is served same-origin (Vercel rewrites in prod, vite proxy in dev),
 // so cross-origin access is limited to localhost plus an explicit allowlist.
@@ -73,12 +76,17 @@ app.all("/mcp", async (c) => {
   return response ?? c.body(null, 202);
 });
 
+// Root app: the API under /api, plus the pretty public raw URL at /raw.
+const root = new Hono();
+root.route("/api", app);
+root.route("/raw", rawRoutes);
+
 // Export for Vercel Functions
-export const GET = handle(app);
-export const POST = handle(app);
-export const PUT = handle(app);
-export const DELETE = handle(app);
-export const PATCH = handle(app);
+export const GET = handle(root);
+export const POST = handle(root);
+export const PUT = handle(root);
+export const DELETE = handle(root);
+export const PATCH = handle(root);
 
 // For local development
-export default app;
+export default root;
