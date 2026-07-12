@@ -15,7 +15,11 @@
       "destination": "/api/[[...path]]"
     },
     {
-      "source": "/((?!api|assets|fonts).*)",
+      "source": "/raw/:token",
+      "destination": "/api/raw/:token"
+    },
+    {
+      "source": "/((?!api|raw/|assets|fonts).*)",
       "destination": "/index.html"
     }
   ],

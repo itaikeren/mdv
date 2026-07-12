@@ -114,6 +114,21 @@ export function ShareView() {
               </div>
             </div>
             <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
+              <a
+                href={`/raw/${token}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] md:text-xs transition-colors whitespace-nowrap"
+                style={{ color: "var(--term-text-muted)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--term-text-bright)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--term-text-muted)";
+                }}
+              >
+                raw
+              </a>
               <Link
                 to="/"
                 className="px-2 py-1 md:px-3 text-[10px] md:text-xs font-medium transition-colors whitespace-nowrap"

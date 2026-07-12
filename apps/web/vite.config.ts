@@ -21,6 +21,11 @@ export default defineConfig({
         target: process.env.API_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
       },
+      '/raw': {
+        target: process.env.API_PROXY_TARGET || 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => '/api' + path,
+      },
     },
   },
 })
