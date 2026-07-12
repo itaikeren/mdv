@@ -3,6 +3,8 @@ export interface MarkdownFileMeta {
   id: string
   userId: string
   name: string
+  slug: string | null
+  visibility: "private" | "public"
   createdAt: Date
   updatedAt: Date
 }
@@ -48,6 +50,7 @@ export interface CreateCommentInput {
 export interface User {
   id: string
   email: string
+  username: string | null
   createdAt: Date
 }
 
@@ -59,6 +62,8 @@ export interface CreateFileInput {
 export interface UpdateFileInput {
   name?: string
   content?: string
+  slug?: string
+  visibility?: "private" | "public"
 }
 
 export interface CreateShareInput {
@@ -90,4 +95,23 @@ export interface CreateApiKeyInput {
 export interface CreateApiKeyResponse {
   key: string
   apiKey: ApiKey
+}
+
+// Public profile (/u/:username): username + metadata for their public files.
+export interface PublicFileMeta {
+  id: string
+  name: string
+  slug: string
+  updatedAt: Date
+}
+
+export interface PublicProfile {
+  username: string
+  files: PublicFileMeta[]
+}
+
+// Full public file (/u/:username/:slug) - content included, no auth required.
+export interface PublicFile extends PublicFileMeta {
+  content: string
+  authorUsername: string
 }

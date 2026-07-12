@@ -9,6 +9,8 @@ import sharesRoutes from "./routes/shares.js";
 import commentsRoutes from "./routes/comments.js";
 import rawRoutes from "./routes/raw.js";
 import apiKeysRoutes from "./routes/api-keys.js";
+import usersRoutes from "./routes/users.js";
+import publicRoutes from "./routes/public.js";
 
 // Create Hono app
 const app = new Hono().basePath("/api");
@@ -49,6 +51,8 @@ app.route("/shares", sharesRoutes);
 app.route("/comments", commentsRoutes);
 app.route("/raw", rawRoutes);
 app.route("/keys", apiKeysRoutes);
+app.route("/users", usersRoutes);
+app.route("/u", publicRoutes);
 
 // MCP endpoint (Streamable HTTP): agents authenticate with an API-key bearer
 // token. A fresh, stateless server + transport is built per request.

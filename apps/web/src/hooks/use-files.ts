@@ -14,6 +14,8 @@ function toMeta(file: MarkdownFile): MarkdownFileMeta {
     id: file.id,
     userId: file.userId,
     name: file.name,
+    slug: file.slug,
+    visibility: file.visibility,
     createdAt: file.createdAt,
     updatedAt: file.updatedAt,
   };

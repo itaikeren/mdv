@@ -61,11 +61,13 @@ app.get("/:token", async (c) => {
   const { token } = c.req.param();
 
   try {
-    // Fetch share + file and increment the view count in a single round trip
+    // Fetch share + file + author username and increment the view count in a
+    // single round trip
     const result = await db.execute(sql`
       UPDATE shares
       SET view_count = shares.view_count + 1
       FROM files
+      INNER JOIN users ON users.id = files.user_id
       WHERE shares.share_token = ${token}
         AND files.id = shares.file_id
         AND (shares.expires_at IS NULL OR shares.expires_at > now())
@@ -79,7 +81,8 @@ app.get("/:token", async (c) => {
         files.name,
         files.content,
         files.created_at,
-        files.updated_at
+        files.updated_at,
+        users.username AS author_username
     `);
 
     const row = result.rows[0];
@@ -109,6 +112,7 @@ app.get("/:token", async (c) => {
       commentsEnabled: row.comments_enabled,
       allowAnonymousComments: row.allow_anonymous_comments,
       viewCount: row.view_count,
+      authorUsername: row.author_username ?? null,
     });
   } catch (error) {
     console.error("Error fetching share:", error);

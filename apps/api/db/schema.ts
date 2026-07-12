@@ -6,6 +6,7 @@ import {
   integer,
   boolean,
   index,
+  uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -13,6 +14,8 @@ import { relations } from "drizzle-orm";
 export const users = pgTable("users", {
   id: text("id").primaryKey(), // Clerk user ID
   email: text("email").notNull(),
+  // Claimed handle for public profiles (/u/:username); nullable until claimed.
+  username: text("username").unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -25,10 +28,18 @@ export const files = pgTable(
       .notNull(),
     name: text("name").notNull(),
     content: text("content").notNull(),
+    // Per-user URL segment for the public profile page (/u/:username/:slug).
+    // Nullable until the file is first published publicly.
+    slug: text("slug"),
+    // Token-based sharing (the `shares` table) stays orthogonal to this.
+    visibility: text("visibility").default("private").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [index("files_user_id_idx").on(table.userId)],
+  (table) => [
+    index("files_user_id_idx").on(table.userId),
+    uniqueIndex("files_user_slug_idx").on(table.userId, table.slug),
+  ],
 );
 
 export const shares = pgTable(
