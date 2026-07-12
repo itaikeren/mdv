@@ -34,15 +34,21 @@ function isShareExpired(share: { expiresAt: Date | null }): boolean {
   return share.expiresAt !== null && new Date(share.expiresAt) < new Date();
 }
 
-// Trim + collapse internal whitespace runs to a single space.
+// Strip invisible Unicode format characters (zero-width spaces/joiners — used
+// to sneak "ad​min" past the reserved-word checks), then trim + collapse
+// internal whitespace runs to a single space.
 function normalizeAuthorName(name: string): string {
-  return name.trim().replace(/\s+/g, " ");
+  return name
+    .replace(/\p{Cf}/gu, "")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 // `collapsed` must already be normalized (normalizeAuthorName). Checks, in
 // order: email impersonation, whole-word reserved match, de-spaced reserved
 // match (substrings like "admiral" must NOT match), file-owner username
-// impersonation, and punctuation-only names.
+// impersonation, and names with no letters or digits at all (any script —
+// non-Latin names are welcome).
 function isDisallowedAuthorName(collapsed: string, ownerUsername: string | null): boolean {
   const lower = collapsed.toLowerCase();
 
@@ -50,7 +56,7 @@ function isDisallowedAuthorName(collapsed: string, ownerUsername: string | null)
   if (lower.split(" ").some((token) => RESERVED_AUTHOR_WORDS.includes(token))) return true;
   if (RESERVED_AUTHOR_WORDS.includes(lower.replace(/\s+/g, ""))) return true;
   if (ownerUsername !== null && lower === ownerUsername.toLowerCase()) return true;
-  if (!/[a-z0-9]/i.test(collapsed)) return true;
+  if (!/[\p{L}\p{N}]/u.test(collapsed)) return true;
 
   return false;
 }
@@ -102,6 +108,9 @@ app.get("/:shareId", async (c) => {
       canDelete: auth !== null && (comment.userId === auth.userId || viewerIsFileOwner),
     }));
 
+    // Per-viewer fields (canDelete / viewerIsFileOwner) must never be served
+    // from a shared cache.
+    c.header("Cache-Control", "private, no-store");
     return c.json({ comments: projected, viewerIsFileOwner });
   } catch (error) {
     console.error("Error fetching comments:", error);
@@ -123,8 +132,8 @@ app.post("/", async (c) => {
       return c.json({ error: "Comment must be 2000 characters or less" }, 400);
     }
 
-    // Rate limit EARLY (IP + shareId are known before the expensive share
-    // lookup / Clerk identity resolution), so limited requests skip that work.
+    // Rate limit EARLY — after auth resolution (needed to pick anon-vs-authed
+    // limits) but before the share lookup, validation work, and insert.
     // Anonymous callers are limited per-IP and per-share; authed per user.
     if (!auth) {
       const ip = clientIp(c);

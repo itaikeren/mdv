@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { useShareByToken } from "../hooks/use-shares";
@@ -22,7 +22,9 @@ export function ShareView() {
   // for existing anchored comments even when commenting is now closed; the
   // shared React Query key dedupes this into a single request.
   const { data: commentsData } = useComments(shareId, true);
-  const comments = commentsData?.comments ?? [];
+  // Stable reference so BlockCommentMarkers' memoized measurement only reruns
+  // when the comments actually change.
+  const comments = useMemo(() => commentsData?.comments ?? [], [commentsData]);
 
   // The block hover affordance is pointer-only; hide it below lg where the
   // left-margin positioning is cramped (comments still work via the compose box).
