@@ -1,5 +1,4 @@
-import { scan } from "react-scan"; // must be imported before React and React DOM
-import { StrictMode } from "react";
+import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ClerkProvider } from "@clerk/clerk-react";
@@ -15,14 +14,24 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key");
 }
 
-scan({
-  enabled: import.meta.env.MODE === "development",
-});
+// Dev-only performance overlay; the dynamic import keeps it out of the production bundle
+if (import.meta.env.DEV) {
+  const { scan } = await import("react-scan");
+  scan({ enabled: true });
+}
+
+// Dev-only agent mode (see scripts/agent-login.mjs); tree-shaken from production builds
+const DevAgentAuth = import.meta.env.DEV ? lazy(() => import("./dev/agent-auth")) : null;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+        {DevAgentAuth && (
+          <Suspense fallback={null}>
+            <DevAgentAuth />
+          </Suspense>
+        )}
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <App />

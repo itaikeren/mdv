@@ -45,6 +45,14 @@ markdown-viewer/
 - `pnpm dev` - Start frontend + API dev servers concurrently
 - `pnpm build` - Build frontend and API
 - `pnpm lint` - Run oxlint on web
+- `pnpm agent:login` - Agent mode: print a one-time sign-in URL for automated testing (see below)
+
+### Agent Mode (dev auth bypass for automated testing)
+To test authenticated flows without the email/password/captcha wall (dev only):
+1. Run `pnpm agent:login` from the repo root - it prints a URL like `http://localhost:5173/?__agent_ticket=...`
+2. Open that URL in the browser under test - it signs in as the shared `agent@example.com` test user via a single-use Clerk sign-in ticket (expires in 10 min)
+
+The ticket consumer (`apps/web/src/dev/agent-auth.tsx`) only exists in dev builds, and the script refuses non-test Clerk keys. Override `AGENT_EMAIL` / `APP_URL` env vars if needed. The API dev server port can be overridden with `PORT` (default 3000) and the web proxy target with `API_PROXY_TARGET` (default `http://localhost:3000`).
 
 ### Linting & Formatting
 - `pnpm -F <package> lint` - Run oxlint
