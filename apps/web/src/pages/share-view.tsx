@@ -109,7 +109,7 @@ export function ShareView() {
                   {file.name}
                 </h1>
                 <p className="text-[10px] truncate" style={{ color: "var(--term-text-muted)" }}>
-                  by {file.userId} | {viewCount} views
+                  {viewCount} views
                 </p>
               </div>
             </div>

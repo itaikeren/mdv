@@ -35,9 +35,24 @@ function generateHeadingId(text: string): string {
     .trim();
 }
 
+// Extract plain text from rendered children (handles nested elements like
+// bold/code inside headings, which would otherwise stringify to [object Object])
+function extractText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(extractText).join("");
+  }
+  if (React.isValidElement(node)) {
+    return extractText((node.props as { children?: ReactNode }).children);
+  }
+  return "";
+}
+
 // Custom heading components with IDs for anchor links
 function HeadingRenderer({ level, children }: { level: number; children: ReactNode }) {
-  const text = React.Children.toArray(children).join("");
+  const text = extractText(children);
   const id = generateHeadingId(text);
 
   const HeadingTag = `h${level}` as keyof React.JSX.IntrinsicElements;
