@@ -4,13 +4,26 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comments";
 import { useTheme } from "../hooks/use-theme";
+import { scrollToBlockForLine } from "../utils/anchor-scroll";
 import type { Comment } from "@markdown-viewer/shared";
+
+// A block of source lines a comment is anchored to (1-based, inclusive).
+export interface CommentAnchor {
+  startLine: number;
+  endLine: number;
+}
 
 interface CommentsSectionProps {
   shareId: string;
   fileOwnerId: string;
   commentsEnabled: boolean;
   allowAnonymousComments: boolean;
+  pendingAnchor?: CommentAnchor | null;
+  onClearAnchor?: () => void;
+}
+
+function anchorLabel(startLine: number, endLine: number): string {
+  return endLine > startLine ? `L${startLine}-${endLine}` : `L${startLine}`;
 }
 
 const ANON_NAME_STORAGE_KEY = "mdv:anon-comment-name";
@@ -190,6 +203,16 @@ function CommentItem({
   const deleteComment = useDeleteComment();
   const canDelete = (comment.userId !== null && currentUserId === comment.userId) || isFileOwner;
 
+  // Anchors live only on top-level comments; replies inherit the parent's
+  // context visually and never carry their own anchor.
+  const anchor =
+    !isReply && comment.anchorStartLine !== null
+      ? {
+          startLine: comment.anchorStartLine,
+          endLine: comment.anchorEndLine ?? comment.anchorStartLine,
+        }
+      : null;
+
   const handleDelete = () => {
     if (confirm("Delete this comment?")) {
       deleteComment.mutate({ id: comment.id, shareId });
@@ -223,7 +246,79 @@ function CommentItem({
         <span style={{ fontSize: 10, color: "var(--term-text-muted)", opacity: 0.7 }}>
           {formatRelativeTime(comment.createdAt)}
         </span>
+        {anchor && (
+          <button
+            type="button"
+            onClick={() => scrollToBlockForLine(anchor.startLine)}
+            title="Jump to the anchored lines"
+            style={{
+              fontFamily: "inherit",
+              fontSize: 10,
+              lineHeight: 1.5,
+              padding: "0.05rem 0.35rem",
+              color: "var(--term-green)",
+              background: "var(--term-bg-surface)",
+              border: "1px solid var(--term-border)",
+              cursor: "pointer",
+              transition: "border-color 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "var(--term-green)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--term-border)";
+            }}
+          >
+            {anchorLabel(anchor.startLine, anchor.endLine)}
+          </button>
+        )}
+        {anchor && comment.isOutdated && (
+          <span
+            title="The lines this comment refers to have changed"
+            style={{
+              fontFamily: "inherit",
+              fontSize: 10,
+              lineHeight: 1.5,
+              padding: "0.05rem 0.35rem",
+              color: "var(--term-amber)",
+              border: "1px solid var(--term-amber)",
+              cursor: "help",
+            }}
+          >
+            outdated
+          </span>
+        )}
       </div>
+      {anchor && comment.isOutdated && comment.anchorText && (
+        <details style={{ marginBottom: "0.4rem" }}>
+          <summary
+            style={{
+              fontSize: 10,
+              color: "var(--term-text-muted)",
+              cursor: "pointer",
+              userSelect: "none",
+            }}
+          >
+            original lines ({anchorLabel(anchor.startLine, anchor.endLine)})
+          </summary>
+          <pre
+            style={{
+              margin: "0.35rem 0 0",
+              padding: "0.4rem 0.6rem",
+              borderLeft: "2px solid var(--term-amber)",
+              background: "var(--term-bg-surface)",
+              color: "var(--term-text-muted)",
+              fontFamily: "inherit",
+              fontSize: 10,
+              lineHeight: 1.5,
+              whiteSpace: "pre-wrap",
+              overflowX: "auto",
+            }}
+          >
+            {comment.anchorText}
+          </pre>
+        </details>
+      )}
       <CommentBody content={comment.content} />
       <div className="flex items-center gap-3" style={{ marginTop: "0.4rem" }}>
         {!isReply && canReply && (
@@ -289,11 +384,15 @@ function ComposeBox({
   parentId,
   onCancel,
   isAnonymous,
+  anchor,
+  onClearAnchor,
 }: {
   shareId: string;
   parentId?: string;
   onCancel?: () => void;
   isAnonymous?: boolean;
+  anchor?: CommentAnchor | null;
+  onClearAnchor?: () => void;
 }) {
   const [content, setContent] = useState("");
   const [authorName, setAuthorName] = useState(() => {
@@ -318,10 +417,12 @@ function ComposeBox({
         content: content.trim(),
         parentId,
         ...(isAnonymous ? { authorName: trimmedName } : {}),
+        ...(anchor ? { anchorStartLine: anchor.startLine, anchorEndLine: anchor.endLine } : {}),
       },
       {
         onSuccess: () => {
           setContent("");
+          onClearAnchor?.();
           onCancel?.();
         },
       },
@@ -355,6 +456,47 @@ function ComposeBox({
         }
       }}
     >
+      {anchor && (
+        <div
+          className="flex items-center justify-between"
+          style={{
+            marginBottom: "0.5rem",
+            paddingBottom: "0.5rem",
+            borderBottom: "1px solid var(--term-border)",
+            gap: "0.5rem",
+          }}
+        >
+          <span style={{ fontSize: 10, color: "var(--term-text-muted)" }}>
+            <span style={{ color: "var(--term-green)" }}>#</span> commenting on{" "}
+            <span style={{ color: "var(--term-green)", fontWeight: 700 }}>
+              {anchorLabel(anchor.startLine, anchor.endLine)}
+            </span>
+          </span>
+          {onClearAnchor && (
+            <button
+              type="button"
+              onClick={onClearAnchor}
+              className="cursor-pointer"
+              style={{
+                fontSize: 10,
+                color: "var(--term-text-muted)",
+                background: "none",
+                border: "none",
+                fontFamily: "inherit",
+                transition: "color 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--term-text-bright)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--term-text-muted)";
+              }}
+            >
+              clear
+            </button>
+          )}
+        </div>
+      )}
       <div
         className="flex items-center gap-1"
         style={{ fontSize: 10, color: "var(--term-text-muted)", marginBottom: "0.5rem" }}
@@ -489,6 +631,8 @@ export function CommentsSection({
   fileOwnerId,
   commentsEnabled,
   allowAnonymousComments,
+  pendingAnchor,
+  onClearAnchor,
 }: CommentsSectionProps) {
   const { userId, isSignedIn } = useAuth();
   const { theme } = useTheme();
@@ -575,8 +719,13 @@ export function CommentsSection({
       {/* Compose box or sign-in prompt (only when comments are enabled) */}
       {commentsEnabled &&
         (canCompose ? (
-          <div style={{ marginBottom: "1.5rem" }}>
-            <ComposeBox shareId={shareId} isAnonymous={composeAsAnonymous} />
+          <div id="mdv-compose" style={{ marginBottom: "1.5rem" }}>
+            <ComposeBox
+              shareId={shareId}
+              isAnonymous={composeAsAnonymous}
+              anchor={pendingAnchor}
+              onClearAnchor={onClearAnchor}
+            />
           </div>
         ) : (
           <div
@@ -654,6 +803,7 @@ export function CommentsSection({
             <div key={comment.id}>
               {/* Top-level comment */}
               <div
+                id={`mdv-comment-${comment.id}`}
                 style={{
                   padding: "0.75rem 0",
                   borderTop: "1px solid var(--term-border)",

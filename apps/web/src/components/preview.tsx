@@ -1,5 +1,6 @@
-import React, { useEffect, useState, memo, lazy, Suspense } from "react";
+import React, { useCallback, useEffect, useRef, useState, memo, lazy, Suspense } from "react";
 import type { ReactNode, Ref } from "react";
+import { CommentBlockAffordance } from "./comment-block-affordance";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useTheme } from "../hooks/use-theme";
@@ -131,6 +132,10 @@ function LinkRenderer({ href, children }: { href?: string; children: ReactNode }
 interface PreviewProps {
   markdown: string;
   scrollRef?: Ref<HTMLDivElement>;
+  // When provided (share view), hovering a block reveals a "+" affordance that
+  // reports the block's source-line range so it can be commented on. Absent for
+  // the main editor, where behavior is unchanged.
+  onCommentOnBlock?: (startLine: number, endLine: number) => void;
 }
 
 interface CodeBlockProps extends SourceLineProps {
@@ -320,14 +325,35 @@ const MARKDOWN_COMPONENTS = {
 const MARKDOWN_PLUGINS = [remarkGfm];
 const REHYPE_PLUGINS = [rehypeSourceLines];
 
-export const Preview = memo(function Preview({ markdown, scrollRef }: PreviewProps) {
+export const Preview = memo(function Preview({
+  markdown,
+  scrollRef,
+  onCommentOnBlock,
+}: PreviewProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Merge the internal container ref (needed for the comment affordance) with
+  // the optional forwarded scrollRef (used by sync scroll).
+  const setContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      containerRef.current = node;
+      if (typeof scrollRef === "function") {
+        scrollRef(node);
+      } else if (scrollRef) {
+        (scrollRef as { current: HTMLDivElement | null }).current = node;
+      }
+    },
+    [scrollRef],
+  );
+
   return (
     <div
-      ref={scrollRef}
+      ref={setContainerRef}
       className="h-full overflow-y-auto p-4"
       style={{
         backgroundColor: "var(--term-bg-raised)",
         border: "1px solid var(--term-border)",
+        position: onCommentOnBlock ? "relative" : undefined,
       }}
     >
       {markdown ? (
@@ -346,6 +372,9 @@ export const Preview = memo(function Preview({ markdown, scrollRef }: PreviewPro
             // start typing to see preview
           </p>
         </div>
+      )}
+      {onCommentOnBlock && (
+        <CommentBlockAffordance containerRef={containerRef} onCommentOnBlock={onCommentOnBlock} />
       )}
     </div>
   );

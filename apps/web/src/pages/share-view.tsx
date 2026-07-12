@@ -1,12 +1,46 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import { useShareByToken } from "../hooks/use-shares";
+import { useComments } from "../hooks/use-comments";
 import { Preview } from "../components/preview";
 import { CommentsSection } from "../components/comments-section";
+import type { CommentAnchor } from "../components/comments-section";
+import { BlockCommentMarkers } from "../components/block-comment-markers";
 import { ThemeToggle } from "../components/theme-toggle";
 
 export function ShareView() {
   const { token } = useParams<{ token: string }>();
   const { data, isLoading, error } = useShareByToken(token!);
+  const { isSignedIn } = useAuth();
+  const [pendingAnchor, setPendingAnchor] = useState<CommentAnchor | null>(null);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const previewWrapRef = useRef<HTMLDivElement>(null);
+
+  const shareId = data?.shareId ?? "";
+  // Fetched unconditionally (matching CommentsSection) so margin markers appear
+  // for existing anchored comments even when commenting is now closed; the
+  // shared React Query key dedupes this into a single request.
+  const { data: comments = [] } = useComments(shareId, true);
+
+  // The block hover affordance is pointer-only; hide it below lg where the
+  // left-margin positioning is cramped (comments still work via the compose box).
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsLargeScreen(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  const handleCommentOnBlock = useCallback((startLine: number, endLine: number) => {
+    setPendingAnchor({ startLine, endLine });
+    requestAnimationFrame(() => {
+      document
+        .getElementById("mdv-compose")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, []);
 
   if (isLoading) {
     return (
@@ -67,7 +101,9 @@ export function ShareView() {
     );
   }
 
-  const { file, viewCount, shareId, commentsEnabled, allowAnonymousComments } = data;
+  const { file, viewCount, commentsEnabled, allowAnonymousComments } = data;
+  const canCompose = commentsEnabled && (isSignedIn || allowAnonymousComments);
+  const showAffordance = canCompose && isLargeScreen;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--term-bg)" }}>
@@ -153,12 +189,24 @@ export function ShareView() {
 
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <Preview markdown={file.content} />
+        <div ref={previewWrapRef} style={{ position: "relative" }}>
+          <Preview
+            markdown={file.content}
+            onCommentOnBlock={showAffordance ? handleCommentOnBlock : undefined}
+          />
+          <BlockCommentMarkers
+            wrapRef={previewWrapRef}
+            comments={comments}
+            contentKey={file.content}
+          />
+        </div>
         <CommentsSection
           shareId={shareId}
           fileOwnerId={file.userId}
           commentsEnabled={commentsEnabled}
           allowAnonymousComments={allowAnonymousComments}
+          pendingAnchor={pendingAnchor}
+          onClearAnchor={() => setPendingAnchor(null)}
         />
       </main>
 
