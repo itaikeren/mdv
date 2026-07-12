@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { comments, shares, users } from "../db/schema.js";
-import { getAuth, requireAuth } from "../middleware/auth.js";
+import { getOptionalAuth, requireAuth } from "../middleware/auth.js";
 import { computeAnchorText, isCommentOutdated } from "../lib/comment-outdated.js";
 import type { CreateCommentInput } from "@markdown-viewer/shared";
 
@@ -71,7 +71,7 @@ app.get("/:shareId", async (c) => {
 // Create a comment (auth optional - anonymous allowed when share permits it)
 app.post("/", async (c) => {
   try {
-    const auth = getAuth(c);
+    const auth = await getOptionalAuth(c);
     const body = await c.req.json<CreateCommentInput>();
 
     // Validate content length
@@ -158,19 +158,32 @@ app.post("/", async (c) => {
     let authorName: string;
 
     if (auth?.userId) {
-      // Authenticated: ensure the user row exists (email stays private in the
-      // users table) and store a public-safe display name on the comment
-      const clerkClient = c.get("clerk");
-      const clerkUser = await clerkClient.users.getUser(auth.userId);
-      const email = clerkUser.emailAddresses[0]?.emailAddress || "";
+      // Authenticated (Clerk session OR API key — both map to a real Clerk
+      // userId, and the clerk client is on context for every request). Resolve
+      // a public-safe display name and ensure the user row exists (email stays
+      // private in the users table). Wrapped in try/catch so agent commenting
+      // via API key never hard-fails on a Clerk hiccup.
+      try {
+        const clerkClient = c.get("clerk");
+        const clerkUser = await clerkClient.users.getUser(auth.userId);
+        const email = clerkUser.emailAddresses[0]?.emailAddress || "";
 
-      authorName =
-        [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
-        clerkUser.username ||
-        maskEmail(email) ||
-        "user";
+        authorName =
+          [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
+          clerkUser.username ||
+          maskEmail(email) ||
+          "user";
 
-      await db.insert(users).values({ id: auth.userId, email }).onConflictDoNothing();
+        await db.insert(users).values({ id: auth.userId, email }).onConflictDoNothing();
+      } catch (clerkError) {
+        console.error("Failed to resolve commenter identity from Clerk:", clerkError);
+        authorName = maskEmail(auth.email ?? "") || "agent";
+        // Ensure the user row exists so the comment's userId FK holds.
+        await db
+          .insert(users)
+          .values({ id: auth.userId, email: auth.email ?? "" })
+          .onConflictDoNothing();
+      }
 
       userId = auth.userId;
     } else {

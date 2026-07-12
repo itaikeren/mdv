@@ -73,9 +73,28 @@ export const comments = pgTable(
   (table) => [index("comments_share_id_idx").on(table.shareId)],
 );
 
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    name: text("name").notNull(),
+    // sha256 hex of the full key; the plaintext is shown only once at creation
+    keyHash: text("key_hash").unique().notNull(),
+    // First 12 chars of the key (e.g. "mdv_a1b2c3d4") for display only
+    keyPrefix: text("key_prefix").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at"),
+  },
+  (table) => [index("api_keys_user_id_idx").on(table.userId)],
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   files: many(files),
+  apiKeys: many(apiKeys),
 }));
 
 export const filesRelations = relations(files, ({ one, many }) => ({
@@ -92,6 +111,13 @@ export const sharesRelations = relations(shares, ({ one, many }) => ({
     references: [files.id],
   }),
   comments: many(comments),
+}));
+
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  user: one(users, {
+    fields: [apiKeys.userId],
+    references: [users.id],
+  }),
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({

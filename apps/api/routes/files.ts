@@ -87,7 +87,7 @@ app.post("/", async (c) => {
       .insert(users)
       .values({
         id: auth.userId,
-        email: (auth.sessionClaims?.email as string) || "",
+        email: auth.email ?? "",
       })
       .onConflictDoNothing();
 

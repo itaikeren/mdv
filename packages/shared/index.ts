@@ -72,3 +72,22 @@ export interface ShareResponse {
   shareUrl: string
   shareToken: string
 }
+
+// API key metadata; the key hash and plaintext are never exposed here.
+export interface ApiKey {
+  id: string
+  name: string
+  keyPrefix: string
+  createdAt: Date
+  lastUsedAt: Date | null
+}
+
+export interface CreateApiKeyInput {
+  name: string
+}
+
+// The plaintext `key` is returned exactly once, at creation time.
+export interface CreateApiKeyResponse {
+  key: string
+  apiKey: ApiKey
+}
