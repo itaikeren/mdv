@@ -4,6 +4,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { apiKeys, users } from "../db/schema.js";
 import { generateApiKey, requireAuth, type AuthContext } from "../middleware/auth.js";
+import { RATE_LIMITS, checkRateLimit, tooManyRequests } from "../lib/rate-limit.js";
 import type { CreateApiKeyInput } from "@markdown-viewer/shared";
 
 const app = new Hono();
@@ -33,6 +34,7 @@ app.get("/", async (c) => {
         id: apiKeys.id,
         name: apiKeys.name,
         keyPrefix: apiKeys.keyPrefix,
+        scope: apiKeys.scope,
         createdAt: apiKeys.createdAt,
         lastUsedAt: apiKeys.lastUsedAt,
       })
@@ -66,6 +68,26 @@ app.post("/", async (c) => {
       return c.json({ error: `Key name must be ${MAX_KEY_NAME_LENGTH} characters or less` }, 400);
     }
 
+    // New keys default to the least-privilege "docs" scope; "full" is opt-in.
+    const scope = body.scope ?? "docs";
+    if (scope !== "docs" && scope !== "full") {
+      return c.json({ error: "Scope must be 'docs' or 'full'" }, 400);
+    }
+
+    const withinRate = await checkRateLimit(
+      RATE_LIMITS.keyCreate.name,
+      auth.userId,
+      RATE_LIMITS.keyCreate.limit,
+      RATE_LIMITS.keyCreate.windowSeconds,
+    );
+    if (!withinRate) {
+      return tooManyRequests(
+        c,
+        RATE_LIMITS.keyCreate.windowSeconds,
+        "Too many API keys created — slow down",
+      );
+    }
+
     // Upsert the user with their real email so bearer auth (which reads
     // users.email) resolves a proper identity. The lazy files.ts upsert often
     // stores "" because default Clerk session tokens carry no email claim.
@@ -90,11 +112,13 @@ app.post("/", async (c) => {
         name,
         keyHash: hash,
         keyPrefix: prefix,
+        scope,
       })
       .returning({
         id: apiKeys.id,
         name: apiKeys.name,
         keyPrefix: apiKeys.keyPrefix,
+        scope: apiKeys.scope,
         createdAt: apiKeys.createdAt,
         lastUsedAt: apiKeys.lastUsedAt,
       });

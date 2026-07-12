@@ -7,6 +7,8 @@ import { comments, files, shares, users } from "../db/schema.js";
 import type { AuthContext } from "../middleware/auth.js";
 import { isCommentOutdated, resolveAnchor } from "../lib/comment-outdated.js";
 import { maskEmail, toPublicAuthor } from "../lib/comment-author.js";
+import { RATE_LIMITS, checkRateLimit } from "../lib/rate-limit.js";
+import { checkCreateQuota, checkUpdateQuota } from "../lib/quota.js";
 
 // NOTE: built on the stable v1 MCP SDK line (`McpServer` + `registerTool`) and
 // `@hono/mcp`'s `StreamableHTTPTransport`. A migration to the v2 SDK packages is
@@ -117,6 +119,21 @@ export function createMcpServer(auth: AuthContext, c: Context): McpServer {
         const name = args.name.trim();
         if (name.length === 0) {
           return errorResult("name is required");
+        }
+
+        const withinRate = await checkRateLimit(
+          RATE_LIMITS.docCreate.name,
+          auth.userId,
+          RATE_LIMITS.docCreate.limit,
+          RATE_LIMITS.docCreate.windowSeconds,
+        );
+        if (!withinRate) {
+          return errorResult("Rate limit exceeded — please retry shortly");
+        }
+
+        const withinQuota = await checkCreateQuota(auth.userId, args.content.length);
+        if (!withinQuota) {
+          return errorResult("Storage quota exceeded");
         }
 
         await db
@@ -251,6 +268,12 @@ export function createMcpServer(auth: AuthContext, c: Context): McpServer {
           return errorResult("You do not have permission to update this document");
         }
 
+        // Only the byte quota applies to an update (the doc count is unchanged).
+        const withinQuota = await checkUpdateQuota(auth.userId, fileId, args.content.length);
+        if (!withinQuota) {
+          return errorResult("Storage quota exceeded");
+        }
+
         const name = args.name?.trim();
         const [updated] = await db
           .update(files)
@@ -364,6 +387,7 @@ export function createMcpServer(auth: AuthContext, c: Context): McpServer {
             anchorStartLine: comment.anchorStartLine,
             anchorEndLine: comment.anchorEndLine,
             isOutdated: isCommentOutdated(comment, share.file.content),
+            isAnonymous: comment.userId === null,
             createdAt: comment.createdAt,
           })),
         );

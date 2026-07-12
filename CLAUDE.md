@@ -86,10 +86,15 @@ Dev and prod are separate Neon branches - schema changes must be pushed to both.
 - `GET /api/shares/file/:fileId` - List shares for file (protected)
 - `DELETE /api/shares/:id` - Delete share (protected)
 
+### Limits
+
+Abuse-prone writes carry Postgres-backed fixed-window rate limits (`apps/api/lib/rate-limit.ts`), and each user has a storage quota (`apps/api/lib/quota.ts`). Limits are tuned so a normal user or a single busy agent never hits them, and rate limiting **fails open** (a DB error allows the request) since it is anti-abuse, not a security boundary. REST responses return `429` with a `Retry-After` header (or `403 Storage quota exceeded`); MCP tools return an `isError` text result. Current ceilings: anonymous comments 10/min per IP and 200/hour per share, authenticated comments 60/min per user, document creation (REST + MCP `publish_document`) 120/hour per user, API-key creation 20/hour per user; storage is capped at 1000 documents and 100 MB per user.
+
 ## Agents / MCP
 
 Agents can publish and read documents over an [MCP](https://modelcontextprotocol.io) Streamable HTTP endpoint, authenticated with an API key (`mdv_...`, created in the app's API Keys UI).
 
+- **Scopes**: keys are `docs` (new-key default) or `full`. All MCP tools work with a `docs`-scope key; `full` is only needed for account-shaping REST calls (`PATCH /api/users/me`, and `PUT /api/files/:id` with `visibility`/`slug`). Pre-scope keys are grandfathered `full`.
 - **Endpoint**: `/api/mcp` (stateless Streamable HTTP, JSON-RPC over POST; no session ids)
 - **Auth**: `Authorization: Bearer mdv_...`. Missing/invalid keys get `401` with `WWW-Authenticate: Bearer`.
 - **Implementation**: `apps/api/mcp/server.ts` (v1 MCP SDK `McpServer` + `@hono/mcp` `StreamableHTTPTransport`), mounted in `apps/api/index.ts`.

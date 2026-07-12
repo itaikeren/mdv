@@ -84,6 +84,18 @@ export const comments = pgTable(
   (table) => [index("comments_share_id_idx").on(table.shareId)],
 );
 
+// Fixed-window rate limiting (see lib/rate-limit.ts). Anti-abuse, not a
+// security boundary — the helper fails open on any DB error.
+export const rateLimits = pgTable("rate_limits", {
+  // Opaque "{name}:{id}:{bucket}" key — NEVER parsed back apart (ids may
+  // contain ':', e.g. IPv6 addresses).
+  key: text("key").primaryKey(),
+  count: integer("count").default(1).notNull(),
+  // Window end; the helper sets this explicitly on insert (no default, so a
+  // missing value fails loudly instead of silently disabling limiting).
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
 export const apiKeys = pgTable(
   "api_keys",
   {
@@ -96,6 +108,11 @@ export const apiKeys = pgTable(
     keyHash: text("key_hash").unique().notNull(),
     // First 12 chars of the key (e.g. "mdv_a1b2c3d4") for display only
     keyPrefix: text("key_prefix").notNull(),
+    // Authority level: "docs" (document/share/comment ops — what the MCP tools
+    // do) or "full" (also account-shaping REST: username claim, public
+    // publishing). Default "full" so pre-scope rows are grandfathered; the route
+    // sets "docs" explicitly for newly created keys.
+    scope: text("scope").default("full").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     lastUsedAt: timestamp("last_used_at"),
   },

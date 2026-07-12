@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { commentsApi } from "../lib/api";
-import type { Comment, CreateCommentInput } from "@markdown-viewer/shared";
+import type { ShareCommentsResponse, CreateCommentInput } from "@markdown-viewer/shared";
 
 export function useComments(shareId: string, enabled: boolean) {
   return useQuery({
@@ -29,12 +29,18 @@ export function useDeleteComment() {
     onMutate: async ({ id, shareId }) => {
       await queryClient.cancelQueries({ queryKey: ["comments", shareId] });
 
-      const previousComments = queryClient.getQueryData<Comment[]>(["comments", shareId]);
+      const previousComments = queryClient.getQueryData<ShareCommentsResponse>([
+        "comments",
+        shareId,
+      ]);
 
-      queryClient.setQueryData<Comment[]>(["comments", shareId], (old) => {
+      queryClient.setQueryData<ShareCommentsResponse>(["comments", shareId], (old) => {
         if (!old) return old;
         // Remove the comment and any replies to it
-        return old.filter((comment) => comment.id !== id && comment.parentId !== id);
+        return {
+          ...old,
+          comments: old.comments.filter((comment) => comment.id !== id && comment.parentId !== id),
+        };
       });
 
       return { previousComments };

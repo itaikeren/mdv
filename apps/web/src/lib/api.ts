@@ -7,7 +7,9 @@ import type {
   CreateCommentInput,
   ShareResponse,
   Share,
-  Comment,
+  SharedFile,
+  PublicComment,
+  ShareCommentsResponse,
   ApiKey,
   CreateApiKeyInput,
   CreateApiKeyResponse,
@@ -71,7 +73,7 @@ export const sharesApi = {
   getByToken: async (
     token: string,
   ): Promise<{
-    file: MarkdownFile;
+    file: SharedFile;
     shareId: string;
     commentsEnabled: boolean;
     allowAnonymousComments: boolean;
@@ -106,8 +108,10 @@ export const sharesApi = {
 
 // Comments API
 export const commentsApi = {
-  getForShare: async (shareId: string): Promise<Comment[]> => {
-    const res = await fetch(`${API_BASE}/comments/${shareId}`);
+  // Same-origin WITH credentials so a signed-in viewer's session cookie is sent
+  // and the server can compute their per-comment `canDelete` / `viewerIsFileOwner`.
+  getForShare: async (shareId: string): Promise<ShareCommentsResponse> => {
+    const res = await fetch(`${API_BASE}/comments/${shareId}`, { credentials: "include" });
     if (!res.ok) {
       const error = await res.json().catch(() => ({ error: "Request failed" }));
       throw new Error(error.error || `HTTP ${res.status}`);
@@ -115,7 +119,7 @@ export const commentsApi = {
     return res.json();
   },
 
-  create: (data: CreateCommentInput): Promise<Comment> =>
+  create: (data: CreateCommentInput): Promise<PublicComment> =>
     fetchWithAuth(`${API_BASE}/comments`, {
       method: "POST",
       body: JSON.stringify(data),

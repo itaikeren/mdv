@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { eq, and, ne } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireFullScope } from "../middleware/auth.js";
 import { SLUG_REGEX } from "../lib/slug.js";
 import { isUniqueViolation } from "../lib/db-errors.js";
 
@@ -56,6 +56,10 @@ app.get("/me", async (c) => {
 app.patch("/me", async (c) => {
   const { error, auth } = await requireAuth(c);
   if (error) return error;
+
+  // Claiming a username is account-shaping — docs-scope keys are refused.
+  const scopeError = requireFullScope(c, auth);
+  if (scopeError) return scopeError;
 
   try {
     const body = await c.req.json<{ username?: string }>();

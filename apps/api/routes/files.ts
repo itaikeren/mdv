@@ -2,9 +2,11 @@ import { Hono } from "hono";
 import { eq, and, ne, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { files, users } from "../db/schema.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireFullScope } from "../middleware/auth.js";
 import { SLUG_REGEX, deriveUniqueSlug } from "../lib/slug.js";
 import { isUniqueViolation } from "../lib/db-errors.js";
+import { RATE_LIMITS, checkRateLimit, tooManyRequests } from "../lib/rate-limit.js";
+import { checkCreateQuota, checkUpdateQuota } from "../lib/quota.js";
 import type { CreateFileInput, UpdateFileInput } from "@markdown-viewer/shared";
 
 const app = new Hono();
@@ -87,6 +89,25 @@ app.post("/", async (c) => {
       return c.json({ error: validationError }, 400);
     }
 
+    const withinRate = await checkRateLimit(
+      RATE_LIMITS.docCreate.name,
+      auth.userId,
+      RATE_LIMITS.docCreate.limit,
+      RATE_LIMITS.docCreate.windowSeconds,
+    );
+    if (!withinRate) {
+      return tooManyRequests(
+        c,
+        RATE_LIMITS.docCreate.windowSeconds,
+        "Too many documents — slow down",
+      );
+    }
+
+    const withinQuota = await checkCreateQuota(auth.userId, (body.content || "").length);
+    if (!withinQuota) {
+      return c.json({ error: "Storage quota exceeded" }, 403);
+    }
+
     // Ensure user exists in database
     await db
       .insert(users)
@@ -123,6 +144,15 @@ app.put("/:id", async (c) => {
   try {
     const body = await c.req.json<UpdateFileInput>();
 
+    // Changing visibility or slug shapes the public profile — that is
+    // account-shaping, so docs-scope keys are refused. Name/content-only PUTs
+    // stay docs-allowed. This runs before the public-visibility slug auto-derive
+    // (which only triggers on visibility === "public"), so there is no bypass.
+    if (body.visibility !== undefined || body.slug !== undefined) {
+      const scopeError = requireFullScope(c, auth);
+      if (scopeError) return scopeError;
+    }
+
     const validationError = validateFileInput(body.name, body.content);
     if (validationError) {
       return c.json({ error: validationError }, 400);
@@ -137,6 +167,15 @@ app.put("/:id", async (c) => {
 
     if (body.visibility !== undefined && !VALID_VISIBILITIES.has(body.visibility)) {
       return c.json({ error: "Visibility must be 'private' or 'public'" }, 400);
+    }
+
+    // Only content changes affect storage; enforce the byte quota when content
+    // is being replaced (the doc count is unchanged by an update).
+    if (body.content !== undefined) {
+      const withinQuota = await checkUpdateQuota(auth.userId, id, body.content.length);
+      if (!withinQuota) {
+        return c.json({ error: "Storage quota exceeded" }, 403);
+      }
     }
 
     // Publishing publicly requires a claimed username, and the file needs a

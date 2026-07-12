@@ -10,12 +10,18 @@ export { clerkMiddleware };
 // auth vs. a Clerk session JWT without a database lookup.
 export const API_KEY_PREFIX = "mdv_";
 
+// Authority level carried by a request. Clerk sessions are always "full"; API
+// keys carry the scope stored on the key ("docs" default for new keys, "full"
+// for grandfathered pre-scope keys).
+export type ApiKeyScope = "docs" | "full";
+
 // Normalized identity for a request, regardless of whether it authenticated via
 // a Clerk session or a long-lived API key.
 export interface AuthContext {
   userId: string;
   email: string | null;
   viaApiKey: boolean;
+  scope: ApiKeyScope;
 }
 
 // sha256 hex of the full key. Only the hash is ever stored; plaintext is shown
@@ -56,7 +62,7 @@ export async function authenticateApiKey(c: Context): Promise<AuthContext | null
   const keyHash = await hashApiKey(key);
 
   const [row] = await db
-    .select({ userId: apiKeys.userId, email: users.email })
+    .select({ userId: apiKeys.userId, email: users.email, scope: apiKeys.scope })
     .from(apiKeys)
     .innerJoin(users, eq(apiKeys.userId, users.id))
     .where(eq(apiKeys.keyHash, keyHash))
@@ -72,6 +78,7 @@ export async function authenticateApiKey(c: Context): Promise<AuthContext | null
     userId: row.userId,
     email: row.email || "agent",
     viaApiKey: true,
+    scope: row.scope as ApiKeyScope,
   };
 }
 
@@ -92,6 +99,7 @@ export async function requireAuth(c: Context) {
     userId: clerkAuth.userId,
     email: (clerkAuth.sessionClaims?.email as string) ?? null,
     viaApiKey: false,
+    scope: "full",
   };
   return { error: null, auth };
 }
@@ -108,8 +116,19 @@ export async function getOptionalAuth(c: Context): Promise<AuthContext | null> {
       userId: clerkAuth.userId,
       email: (clerkAuth.sessionClaims?.email as string) ?? null,
       viaApiKey: false,
+      scope: "full",
     };
   }
 
+  return null;
+}
+
+// Guard for account-shaping actions (username claim, public publishing). A
+// docs-scope API key is refused; Clerk sessions and full-scope keys pass.
+// Returns a 403 Response to short-circuit the handler, or null when allowed.
+export function requireFullScope(c: Context, auth: AuthContext): Response | null {
+  if (auth.viaApiKey && auth.scope !== "full") {
+    return c.json({ error: "This action requires a full-scope API key" }, 403);
+  }
   return null;
 }

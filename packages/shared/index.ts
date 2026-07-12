@@ -13,6 +13,19 @@ export interface MarkdownFile extends MarkdownFileMeta {
   content: string
 }
 
+// The file shape returned by the public share GET (/api/shares/:token).
+// Deliberately omits the owner's raw Clerk user ID — public responses never
+// carry it (ownership affordances come from server-computed booleans instead).
+export interface SharedFile {
+  id: string
+  name: string
+  content: string
+  createdAt: Date
+  updatedAt: Date
+  slug: string | null
+  visibility: "private" | "public"
+}
+
 export interface Share {
   id: string
   fileId: string
@@ -24,18 +37,28 @@ export interface Share {
   viewCount: number
 }
 
-export interface Comment {
+// Public-facing comment projection served by the share pages. No raw Clerk
+// user ID on the wire: `userEmail` is a display-safe author string, and
+// `isAnonymous` / `canDelete` are computed server-side per viewer.
+export interface PublicComment {
   id: string
   shareId: string
-  userId: string | null
-  userEmail: string
   content: string
   parentId: string | null
   anchorStartLine: number | null
   anchorEndLine: number | null
   anchorText: string | null
   createdAt: Date
-  isOutdated?: boolean
+  userEmail: string
+  isOutdated: boolean
+  isAnonymous: boolean
+  canDelete: boolean
+}
+
+// Response body of the public comments GET (/api/comments/:shareId).
+export interface ShareCommentsResponse {
+  comments: PublicComment[]
+  viewerIsFileOwner: boolean
 }
 
 export interface CreateCommentInput {
@@ -78,17 +101,24 @@ export interface ShareResponse {
   shareToken: string
 }
 
+// Authority level of an API key: "docs" (document/share/comment operations —
+// what the MCP tools do) or "full" (also account-shaping REST: username claim,
+// public publishing). New keys default to "docs"; pre-scope keys are "full".
+export type ApiKeyScope = "docs" | "full"
+
 // API key metadata; the key hash and plaintext are never exposed here.
 export interface ApiKey {
   id: string
   name: string
   keyPrefix: string
+  scope: ApiKeyScope
   createdAt: Date
   lastUsedAt: Date | null
 }
 
 export interface CreateApiKeyInput {
   name: string
+  scope?: ApiKeyScope
 }
 
 // The plaintext `key` is returned exactly once, at creation time.

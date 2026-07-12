@@ -3,7 +3,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { files, shares } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
-import type { CreateShareInput } from "@markdown-viewer/shared";
+import type { CreateShareInput, SharedFile } from "@markdown-viewer/shared";
 
 const app = new Hono();
 
@@ -77,7 +77,6 @@ app.get("/:token", async (c) => {
         shares.allow_anonymous_comments,
         shares.view_count,
         files.id AS file_id,
-        files.user_id,
         files.name,
         files.content,
         files.created_at,
@@ -101,17 +100,20 @@ app.get("/:token", async (c) => {
       return c.json({ error: "Share not found" }, 404);
     }
 
+    // Public share response — the file shape deliberately omits the owner's
+    // Clerk user ID (dropped from the RETURNING list above too).
+    const file: SharedFile = {
+      id: row.file_id as string,
+      name: row.name as string,
+      content: row.content as string,
+      createdAt: row.created_at as Date,
+      updatedAt: row.updated_at as Date,
+      slug: (row.slug ?? null) as string | null,
+      visibility: row.visibility as "private" | "public",
+    };
+
     return c.json({
-      file: {
-        id: row.file_id,
-        userId: row.user_id,
-        name: row.name,
-        content: row.content,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        slug: row.slug ?? null,
-        visibility: row.visibility,
-      },
+      file,
       shareId: row.share_id,
       commentsEnabled: row.comments_enabled,
       allowAnonymousComments: row.allow_anonymous_comments,
