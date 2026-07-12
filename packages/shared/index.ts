@@ -29,7 +29,11 @@ export interface Comment {
   userEmail: string
   content: string
   parentId: string | null
+  anchorStartLine: number | null
+  anchorEndLine: number | null
+  anchorText: string | null
   createdAt: Date
+  isOutdated?: boolean
 }
 
 export interface CreateCommentInput {
@@ -37,6 +41,8 @@ export interface CreateCommentInput {
   content: string
   parentId?: string
   authorName?: string
+  anchorStartLine?: number
+  anchorEndLine?: number
 }
 
 export interface User {

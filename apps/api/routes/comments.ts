@@ -3,9 +3,11 @@ import { eq, and } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { comments, shares, users } from "../db/schema.js";
 import { getAuth, requireAuth } from "../middleware/auth.js";
+import { computeAnchorText, isCommentOutdated } from "../lib/comment-outdated.js";
 import type { CreateCommentInput } from "@markdown-viewer/shared";
 
 const MAX_AUTHOR_NAME_LENGTH = 50;
+const MAX_ANCHOR_LINES = 200;
 
 const app = new Hono();
 
@@ -36,6 +38,7 @@ app.get("/:shareId", async (c) => {
   try {
     const share = await db.query.shares.findFirst({
       where: eq(shares.id, shareId),
+      with: { file: true },
     });
 
     if (!share) {
@@ -53,7 +56,11 @@ app.get("/:shareId", async (c) => {
       .orderBy(comments.createdAt);
 
     return c.json(
-      shareComments.map((comment) => ({ ...comment, userEmail: toPublicAuthor(comment) })),
+      shareComments.map((comment) => ({
+        ...comment,
+        userEmail: toPublicAuthor(comment),
+        isOutdated: isCommentOutdated(comment, share.file.content),
+      })),
     );
   } catch (error) {
     console.error("Error fetching comments:", error);
@@ -78,6 +85,7 @@ app.post("/", async (c) => {
     // Verify share exists and comments are enabled
     const share = await db.query.shares.findFirst({
       where: eq(shares.id, body.shareId),
+      with: { file: true },
     });
 
     if (!share) {
@@ -110,6 +118,40 @@ app.post("/", async (c) => {
       if (parentComment.parentId !== null) {
         return c.json({ error: "Cannot reply to a reply" }, 400);
       }
+    }
+
+    // Line anchor (GitHub-style) — top-level comments only; the server
+    // computes anchorText from CURRENT file content (never trust client text).
+    let anchorStartLine: number | null = null;
+    let anchorEndLine: number | null = null;
+    let anchorText: string | null = null;
+
+    if (body.anchorStartLine !== undefined) {
+      if (body.parentId) {
+        return c.json({ error: "Replies cannot have a line anchor" }, 400);
+      }
+
+      const start = body.anchorStartLine;
+      const end = body.anchorEndLine ?? start;
+
+      if (!Number.isInteger(start) || start < 1) {
+        return c.json({ error: "anchorStartLine must be an integer >= 1" }, 400);
+      }
+      if (!Number.isInteger(end) || end < start) {
+        return c.json({ error: "anchorEndLine must be an integer >= anchorStartLine" }, 400);
+      }
+      if (end - start + 1 > MAX_ANCHOR_LINES) {
+        return c.json({ error: `Anchor range must be ${MAX_ANCHOR_LINES} lines or fewer` }, 400);
+      }
+
+      const fileLineCount = share.file.content.split("\n").length;
+      if (end > fileLineCount) {
+        return c.json({ error: "Anchor range exceeds the file's current line count" }, 400);
+      }
+
+      anchorStartLine = start;
+      anchorEndLine = end;
+      anchorText = computeAnchorText(share.file.content, start, end);
     }
 
     let userId: string | null = null;
@@ -151,6 +193,9 @@ app.post("/", async (c) => {
         userEmail: authorName,
         content: body.content.trim(),
         parentId: body.parentId ?? null,
+        anchorStartLine,
+        anchorEndLine,
+        anchorText,
       })
       .returning();
 

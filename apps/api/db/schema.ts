@@ -62,6 +62,12 @@ export const comments = pgTable(
     parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, {
       onDelete: "cascade",
     }),
+    // Line anchor (GitHub-style): static source-line range + a snapshot of the
+    // anchored text at comment time. All null = regular unanchored comment.
+    // "Outdated" is derived on read by comparing the snapshot to current content.
+    anchorStartLine: integer("anchor_start_line"),
+    anchorEndLine: integer("anchor_end_line"),
+    anchorText: text("anchor_text"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("comments_share_id_idx").on(table.shareId)],
