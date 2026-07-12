@@ -86,6 +86,10 @@ Dev and prod are separate Neon branches - schema changes must be pushed to both.
 - `GET /api/shares/file/:fileId` - List shares for file (protected)
 - `DELETE /api/shares/:id` - Delete share (protected)
 
+### Limits
+
+Abuse-prone writes carry Postgres-backed fixed-window rate limits (`apps/api/lib/rate-limit.ts`), and each user has a storage quota (`apps/api/lib/quota.ts`). Limits are tuned so a normal user or a single busy agent never hits them, and rate limiting **fails open** (a DB error allows the request) since it is anti-abuse, not a security boundary. REST responses return `429` with a `Retry-After` header (or `403 Storage quota exceeded`); MCP tools return an `isError` text result. Current ceilings: anonymous comments 10/min per IP and 200/hour per share, authenticated comments 60/min per user, document creation (REST + MCP `publish_document`) 120/hour per user, API-key creation 20/hour per user; storage is capped at 1000 documents and 100 MB per user.
+
 ## Agents / MCP
 
 Agents can publish and read documents over an [MCP](https://modelcontextprotocol.io) Streamable HTTP endpoint, authenticated with an API key (`mdv_...`, created in the app's API Keys UI).

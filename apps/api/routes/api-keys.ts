@@ -4,6 +4,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { apiKeys, users } from "../db/schema.js";
 import { generateApiKey, requireAuth, type AuthContext } from "../middleware/auth.js";
+import { RATE_LIMITS, checkRateLimit, tooManyRequests } from "../lib/rate-limit.js";
 import type { CreateApiKeyInput } from "@markdown-viewer/shared";
 
 const app = new Hono();
@@ -64,6 +65,20 @@ app.post("/", async (c) => {
     }
     if (name.length > MAX_KEY_NAME_LENGTH) {
       return c.json({ error: `Key name must be ${MAX_KEY_NAME_LENGTH} characters or less` }, 400);
+    }
+
+    const withinRate = await checkRateLimit(
+      RATE_LIMITS.keyCreate.name,
+      auth.userId,
+      RATE_LIMITS.keyCreate.limit,
+      RATE_LIMITS.keyCreate.windowSeconds,
+    );
+    if (!withinRate) {
+      return tooManyRequests(
+        c,
+        RATE_LIMITS.keyCreate.windowSeconds,
+        "Too many API keys created — slow down",
+      );
     }
 
     // Upsert the user with their real email so bearer auth (which reads

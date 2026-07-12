@@ -5,6 +5,7 @@ import { comments, shares, users } from "../db/schema.js";
 import { getOptionalAuth, requireAuth } from "../middleware/auth.js";
 import { isCommentOutdated, resolveAnchor } from "../lib/comment-outdated.js";
 import { maskEmail, toPublicAuthor } from "../lib/comment-author.js";
+import { RATE_LIMITS, checkRateLimit, clientIp, tooManyRequests } from "../lib/rate-limit.js";
 import type { CreateCommentInput, PublicComment } from "@markdown-viewer/shared";
 
 const MAX_AUTHOR_NAME_LENGTH = 50;
@@ -81,6 +82,53 @@ app.post("/", async (c) => {
     }
     if (body.content.length > 2000) {
       return c.json({ error: "Comment must be 2000 characters or less" }, 400);
+    }
+
+    // Rate limit EARLY (IP + shareId are known before the expensive share
+    // lookup / Clerk identity resolution), so limited requests skip that work.
+    // Anonymous callers are limited per-IP and per-share; authed per user.
+    if (!auth) {
+      const ip = clientIp(c);
+      const withinIp = await checkRateLimit(
+        RATE_LIMITS.anonComment.name,
+        ip,
+        RATE_LIMITS.anonComment.limit,
+        RATE_LIMITS.anonComment.windowSeconds,
+      );
+      if (!withinIp) {
+        return tooManyRequests(
+          c,
+          RATE_LIMITS.anonComment.windowSeconds,
+          "Too many comments — slow down",
+        );
+      }
+      const withinShare = await checkRateLimit(
+        RATE_LIMITS.anonCommentShare.name,
+        body.shareId,
+        RATE_LIMITS.anonCommentShare.limit,
+        RATE_LIMITS.anonCommentShare.windowSeconds,
+      );
+      if (!withinShare) {
+        return tooManyRequests(
+          c,
+          RATE_LIMITS.anonCommentShare.windowSeconds,
+          "Too many comments — slow down",
+        );
+      }
+    } else {
+      const withinUser = await checkRateLimit(
+        RATE_LIMITS.comment.name,
+        auth.userId,
+        RATE_LIMITS.comment.limit,
+        RATE_LIMITS.comment.windowSeconds,
+      );
+      if (!withinUser) {
+        return tooManyRequests(
+          c,
+          RATE_LIMITS.comment.windowSeconds,
+          "Too many comments — slow down",
+        );
+      }
     }
 
     // Verify share exists and comments are enabled
