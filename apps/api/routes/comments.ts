@@ -9,6 +9,26 @@ const MAX_AUTHOR_NAME_LENGTH = 50;
 
 const app = new Hono();
 
+function isShareExpired(share: { expiresAt: Date | null }): boolean {
+  return share.expiresAt !== null && new Date(share.expiresAt) < new Date();
+}
+
+// "john@example.com" -> "j***@example.com"
+function maskEmail(email: string): string {
+  const at = email.indexOf("@");
+  if (at <= 0) return "";
+  return `${email[0]}***@${email.slice(at + 1)}`;
+}
+
+// Older comments stored the author's full email address; never expose it on
+// the public endpoint. Newer comments store a display name at creation time.
+function toPublicAuthor(comment: { userId: string | null; userEmail: string }): string {
+  if (comment.userId && comment.userEmail.includes("@")) {
+    return maskEmail(comment.userEmail) || "user";
+  }
+  return comment.userEmail || "user";
+}
+
 // Get all comments for a share (public - always returns comments for read-only display)
 app.get("/:shareId", async (c) => {
   const { shareId } = c.req.param();
@@ -22,13 +42,19 @@ app.get("/:shareId", async (c) => {
       return c.json({ error: "Share not found" }, 404);
     }
 
+    if (isShareExpired(share)) {
+      return c.json({ error: "Share has expired" }, 410);
+    }
+
     const shareComments = await db
       .select()
       .from(comments)
       .where(eq(comments.shareId, shareId))
       .orderBy(comments.createdAt);
 
-    return c.json(shareComments);
+    return c.json(
+      shareComments.map((comment) => ({ ...comment, userEmail: toPublicAuthor(comment) })),
+    );
   } catch (error) {
     console.error("Error fetching comments:", error);
     return c.json({ error: "Failed to fetch comments" }, 500);
@@ -58,6 +84,10 @@ app.post("/", async (c) => {
       return c.json({ error: "Share not found" }, 404);
     }
 
+    if (isShareExpired(share)) {
+      return c.json({ error: "Share has expired" }, 410);
+    }
+
     if (!share.commentsEnabled) {
       return c.json({ error: "Comments are disabled for this share" }, 403);
     }
@@ -83,15 +113,22 @@ app.post("/", async (c) => {
     }
 
     let userId: string | null = null;
-    let userEmail: string;
+    let authorName: string;
 
     if (auth?.userId) {
-      // Authenticated: pull email from Clerk and ensure user row exists
+      // Authenticated: ensure the user row exists (email stays private in the
+      // users table) and store a public-safe display name on the comment
       const clerkClient = c.get("clerk");
       const clerkUser = await clerkClient.users.getUser(auth.userId);
-      userEmail = clerkUser.emailAddresses[0]?.emailAddress || "unknown";
+      const email = clerkUser.emailAddresses[0]?.emailAddress || "";
 
-      await db.insert(users).values({ id: auth.userId, email: userEmail }).onConflictDoNothing();
+      authorName =
+        [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
+        clerkUser.username ||
+        maskEmail(email) ||
+        "user";
+
+      await db.insert(users).values({ id: auth.userId, email }).onConflictDoNothing();
 
       userId = auth.userId;
     } else {
@@ -103,7 +140,7 @@ app.post("/", async (c) => {
       if (trimmedName.length > MAX_AUTHOR_NAME_LENGTH) {
         return c.json({ error: `Name must be ${MAX_AUTHOR_NAME_LENGTH} characters or less` }, 400);
       }
-      userEmail = trimmedName;
+      authorName = trimmedName;
     }
 
     const [newComment] = await db
@@ -111,7 +148,7 @@ app.post("/", async (c) => {
       .values({
         shareId: body.shareId,
         userId,
-        userEmail,
+        userEmail: authorName,
         content: body.content.trim(),
         parentId: body.parentId ?? null,
       })

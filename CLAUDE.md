@@ -92,6 +92,13 @@ CLERK_SECRET_KEY=sk_test_...
 DATABASE_URL=postgresql://...@....neon.tech/...
 ```
 
+Optional:
+```env
+# Extra origins allowed to call the API cross-origin (comma-separated).
+# Same-origin (prod rewrites / dev proxy) and localhost always work.
+ALLOWED_ORIGINS=https://example.com
+```
+
 ## Deployment
 
 **Platform**: Vercel

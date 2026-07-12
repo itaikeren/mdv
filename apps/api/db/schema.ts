@@ -1,4 +1,13 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  integer,
+  boolean,
+  index,
+  type AnyPgColumn,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -49,7 +58,10 @@ export const comments = pgTable(
     userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     userEmail: text("user_email").notNull(),
     content: text("content").notNull(),
-    parentId: uuid("parent_id"),
+    // Deleting a top-level comment removes its replies instead of orphaning them
+    parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, {
+      onDelete: "cascade",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("comments_share_id_idx").on(table.shareId)],

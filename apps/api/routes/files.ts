@@ -7,6 +7,19 @@ import type { CreateFileInput, UpdateFileInput } from "@markdown-viewer/shared";
 
 const app = new Hono();
 
+const MAX_NAME_LENGTH = 255;
+const MAX_CONTENT_LENGTH = 1_000_000; // ~1MB of markdown
+
+function validateFileInput(name: string | undefined, content: string | undefined): string | null {
+  if (name !== undefined && (name.trim().length === 0 || name.length > MAX_NAME_LENGTH)) {
+    return `Name must be between 1 and ${MAX_NAME_LENGTH} characters`;
+  }
+  if (content !== undefined && content.length > MAX_CONTENT_LENGTH) {
+    return "File content is too large";
+  }
+  return null;
+}
+
 // Get all files for the authenticated user (metadata only - content is fetched per file)
 app.get("/", async (c) => {
   const { error, auth } = await requireAuth(c);
@@ -63,6 +76,12 @@ app.post("/", async (c) => {
   try {
     const body = await c.req.json<CreateFileInput>();
 
+    // Name is required on create; pass "" so a missing name fails validation
+    const validationError = validateFileInput(body.name ?? "", body.content);
+    if (validationError) {
+      return c.json({ error: validationError }, 400);
+    }
+
     // Ensure user exists in database
     await db
       .insert(users)
@@ -98,6 +117,11 @@ app.put("/:id", async (c) => {
 
   try {
     const body = await c.req.json<UpdateFileInput>();
+
+    const validationError = validateFileInput(body.name, body.content);
+    if (validationError) {
+      return c.json({ error: validationError }, 400);
+    }
 
     // Update with ownership check in a single query; only allow known fields
     const [updatedFile] = await db

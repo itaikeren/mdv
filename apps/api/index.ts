@@ -9,11 +9,26 @@ import commentsRoutes from "./routes/comments.js";
 // Create Hono app
 const app = new Hono().basePath("/api");
 
+// The app is served same-origin (Vercel rewrites in prod, vite proxy in dev),
+// so cross-origin access is limited to localhost plus an explicit allowlist.
+// Reflecting arbitrary origins with credentials would let any website make
+// authenticated requests on behalf of a signed-in user.
+const LOCALHOST_ORIGIN = /^http:\/\/localhost(:\d+)?$/;
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 // Middleware
 app.use(
   "*",
   cors({
-    origin: (origin) => origin, // Allow all origins in dev, Vercel will use CORS headers
+    origin: (origin) => {
+      if (LOCALHOST_ORIGIN.test(origin) || allowedOrigins.includes(origin)) {
+        return origin;
+      }
+      return null;
+    },
     credentials: true,
   }),
 );
