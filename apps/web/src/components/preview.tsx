@@ -1,10 +1,29 @@
-import React, { useEffect, useState, memo } from "react";
+import React, { useEffect, useState, memo, lazy, Suspense } from "react";
 import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { highlightCode } from "../utils/highlighter";
-import { Mermaid } from "./mermaid";
 import { useTheme } from "../hooks/use-theme";
+
+// Mermaid is heavy - only download it when a document actually contains a diagram
+const Mermaid = lazy(() => import("./mermaid").then((m) => ({ default: m.Mermaid })));
+
+function MermaidFallback() {
+  return (
+    <div className="my-4 flex justify-center">
+      <div
+        className="w-full max-w-full border p-4 flex items-center justify-center text-xs"
+        style={{
+          backgroundColor: "var(--term-bg-surface)",
+          borderColor: "var(--term-border)",
+          minHeight: "200px",
+          color: "var(--term-text-muted)",
+        }}
+      >
+        rendering...
+      </div>
+    </div>
+  );
+}
 
 // Utility function to generate ID from heading text
 function generateHeadingId(text: string): string {
@@ -117,6 +136,7 @@ function LinkWrapper({ href, children }: { href?: string; children?: ReactNode }
 }
 
 const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlockProps) {
+  const { theme } = useTheme();
   const [highlightedCode, setHighlightedCode] = useState<string>("");
 
   const code = String(children).replace(/\n$/, "");
@@ -129,12 +149,20 @@ const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlo
   useEffect(() => {
     if (!isCodeBlock || isMermaid) return;
 
-    highlightCode(code, language)
-      .then(setHighlightedCode)
+    let cancelled = false;
+    // Shiki is only downloaded once a document actually contains a code block
+    import("../utils/highlighter")
+      .then(({ highlightCode }) => highlightCode(code, language, theme))
+      .then((html) => {
+        if (!cancelled) setHighlightedCode(html);
+      })
       .catch(() => {
-        setHighlightedCode(`<pre><code>${code}</code></pre>`);
+        if (!cancelled) setHighlightedCode("");
       });
-  }, [code, language, isCodeBlock, isMermaid]);
+    return () => {
+      cancelled = true;
+    };
+  }, [code, language, isCodeBlock, isMermaid, theme]);
 
   // Inline code
   if (!isCodeBlock) {
@@ -154,7 +182,11 @@ const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlo
 
   // Mermaid diagram
   if (isMermaid) {
-    return <Mermaid chart={code} />;
+    return (
+      <Suspense fallback={<MermaidFallback />}>
+        <Mermaid chart={code} />
+      </Suspense>
+    );
   }
 
   // Code block - loading fallback
@@ -199,8 +231,6 @@ const MARKDOWN_COMPONENTS = {
 const MARKDOWN_PLUGINS = [remarkGfm];
 
 export const Preview = memo(function Preview({ markdown }: PreviewProps) {
-  const { theme } = useTheme();
-
   return (
     <div
       className="h-full overflow-y-auto p-4"
@@ -210,7 +240,7 @@ export const Preview = memo(function Preview({ markdown }: PreviewProps) {
       }}
     >
       {markdown ? (
-        <div className="prose prose-sm prose-invert max-w-none" key={theme}>
+        <div className="prose prose-sm prose-invert max-w-none">
           <ReactMarkdown remarkPlugins={MARKDOWN_PLUGINS} components={MARKDOWN_COMPONENTS}>
             {markdown}
           </ReactMarkdown>
