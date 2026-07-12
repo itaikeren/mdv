@@ -82,6 +82,8 @@ app.get("/:token", async (c) => {
         files.content,
         files.created_at,
         files.updated_at,
+        files.slug,
+        files.visibility,
         users.username AS author_username
     `);
 
@@ -107,6 +109,8 @@ app.get("/:token", async (c) => {
         content: row.content,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        slug: row.slug ?? null,
+        visibility: row.visibility,
       },
       shareId: row.share_id,
       commentsEnabled: row.comments_enabled,

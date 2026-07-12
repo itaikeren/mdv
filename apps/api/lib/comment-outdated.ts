@@ -5,9 +5,9 @@
 const MAX_ANCHOR_TEXT_LENGTH = 2000;
 
 // Longest span (in source lines) a single comment anchor may cover.
-export const MAX_ANCHOR_LINES = 200;
+const MAX_ANCHOR_LINES = 200;
 
-export function computeAnchorText(content: string, startLine: number, endLine: number): string {
+function computeAnchorText(content: string, startLine: number, endLine: number): string {
   return content
     .split("\n")
     .slice(startLine - 1, endLine)

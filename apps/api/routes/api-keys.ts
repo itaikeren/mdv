@@ -71,10 +71,15 @@ app.post("/", async (c) => {
     // stores "" because default Clerk session tokens carry no email claim.
     const clerkUser = await c.get("clerk").users.getUser(auth.userId);
     const email = clerkUser.emailAddresses[0]?.emailAddress || "";
-    await db
-      .insert(users)
-      .values({ id: auth.userId, email })
-      .onConflictDoUpdate({ target: users.id, set: { email } });
+    if (email) {
+      await db
+        .insert(users)
+        .values({ id: auth.userId, email })
+        .onConflictDoUpdate({ target: users.id, set: { email } });
+    } else {
+      // No email on the Clerk account: never overwrite a previously-good one.
+      await db.insert(users).values({ id: auth.userId, email }).onConflictDoNothing();
+    }
 
     const { key, prefix, hash } = await generateApiKey();
 

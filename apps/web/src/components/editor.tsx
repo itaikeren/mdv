@@ -1,12 +1,11 @@
 import React, { memo, useCallback, useMemo, useRef } from "react";
-import type { Ref, UIEventHandler } from "react";
+import type { Ref } from "react";
 
 interface EditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   textareaRef?: Ref<HTMLTextAreaElement>;
-  onScroll?: UIEventHandler<HTMLTextAreaElement>;
 }
 
 interface WrapResult {
@@ -57,7 +56,6 @@ export const Editor = memo(function Editor({
   onChange,
   placeholder = "# start typing...",
   textareaRef: externalTextareaRef,
-  onScroll,
 }: EditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -179,7 +177,6 @@ export const Editor = memo(function Editor({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onScroll={onScroll}
         placeholder={placeholder}
         className="w-full flex-1 min-h-96 resize-none outline-none text-xs leading-relaxed p-4"
         style={{

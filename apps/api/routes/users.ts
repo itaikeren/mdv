@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
 import { SLUG_REGEX } from "../lib/slug.js";
+import { isUniqueViolation } from "../lib/db-errors.js";
 
 const app = new Hono();
 
@@ -22,10 +23,6 @@ const RESERVED_USERNAMES = new Set([
   "keys",
   "mcp",
 ]);
-
-function isUniqueViolation(err: unknown): boolean {
-  return typeof err === "object" && err !== null && "code" in err && err.code === "23505";
-}
 
 // Ensure a users row exists for this caller without ever clobbering an
 // existing email (mirrors the lazy-upsert pattern used by files.ts/comments.ts).

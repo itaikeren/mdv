@@ -45,7 +45,7 @@ export function pickBlockForLine(blocks: ArrayLike<HTMLElement>, line: number): 
   return best;
 }
 
-export function findBlockForLine(line: number): HTMLElement | null {
+function findBlockForLine(line: number): HTMLElement | null {
   return pickBlockForLine(document.querySelectorAll<HTMLElement>("[data-line]"), line);
 }
 

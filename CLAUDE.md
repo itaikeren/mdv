@@ -90,7 +90,7 @@ Dev and prod are separate Neon branches - schema changes must be pushed to both.
 
 Agents can publish and read documents over an [MCP](https://modelcontextprotocol.io) Streamable HTTP endpoint, authenticated with an API key (`mdv_...`, created in the app's API Keys UI).
 
-- **Endpoint**: `POST /api/mcp` (stateless Streamable HTTP; no session ids)
+- **Endpoint**: `/api/mcp` (stateless Streamable HTTP, JSON-RPC over POST; no session ids)
 - **Auth**: `Authorization: Bearer mdv_...`. Missing/invalid keys get `401` with `WWW-Authenticate: Bearer`.
 - **Implementation**: `apps/api/mcp/server.ts` (v1 MCP SDK `McpServer` + `@hono/mcp` `StreamableHTTPTransport`), mounted in `apps/api/index.ts`.
 

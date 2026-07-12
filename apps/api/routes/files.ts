@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { files, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
 import { SLUG_REGEX, deriveUniqueSlug } from "../lib/slug.js";
+import { isUniqueViolation } from "../lib/db-errors.js";
 import type { CreateFileInput, UpdateFileInput } from "@markdown-viewer/shared";
 
 const app = new Hono();
@@ -194,6 +195,11 @@ app.put("/:id", async (c) => {
 
     return c.json(updatedFile);
   } catch (error) {
+    // Lost slug-uniqueness race: the pre-check passed but the UPDATE hit
+    // files_user_slug_idx. Same outcome as the pre-check, not a server error.
+    if (isUniqueViolation(error)) {
+      return c.json({ error: "You already have a file with this slug" }, 409);
+    }
     console.error("Error updating file:", error);
     return c.json({ error: "Failed to update file" }, 500);
   }

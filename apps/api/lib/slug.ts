@@ -7,10 +7,6 @@ import { files } from "../db/schema.js";
 // 3-32 by design (deliberate - keeps 1-2 char handles reserved).
 export const SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{1,30})[a-z0-9]$/;
 
-export function isValidSlug(value: string): boolean {
-  return SLUG_REGEX.test(value);
-}
-
 const MAX_SLUG_LENGTH = 32;
 
 // Derive a slug candidate from a file name: lowercase, non-alnum runs
