@@ -3,32 +3,16 @@ import { eq, and } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { comments, shares, users } from "../db/schema.js";
 import { getOptionalAuth, requireAuth } from "../middleware/auth.js";
-import { computeAnchorText, isCommentOutdated } from "../lib/comment-outdated.js";
+import { isCommentOutdated, resolveAnchor } from "../lib/comment-outdated.js";
+import { maskEmail, toPublicAuthor } from "../lib/comment-author.js";
 import type { CreateCommentInput } from "@markdown-viewer/shared";
 
 const MAX_AUTHOR_NAME_LENGTH = 50;
-const MAX_ANCHOR_LINES = 200;
 
 const app = new Hono();
 
 function isShareExpired(share: { expiresAt: Date | null }): boolean {
   return share.expiresAt !== null && new Date(share.expiresAt) < new Date();
-}
-
-// "john@example.com" -> "j***@example.com"
-function maskEmail(email: string): string {
-  const at = email.indexOf("@");
-  if (at <= 0) return "";
-  return `${email[0]}***@${email.slice(at + 1)}`;
-}
-
-// Older comments stored the author's full email address; never expose it on
-// the public endpoint. Newer comments store a display name at creation time.
-function toPublicAuthor(comment: { userId: string | null; userEmail: string }): string {
-  if (comment.userId && comment.userEmail.includes("@")) {
-    return maskEmail(comment.userEmail) || "user";
-  }
-  return comment.userEmail || "user";
 }
 
 // Get all comments for a share (public - always returns comments for read-only display)
@@ -131,27 +115,14 @@ app.post("/", async (c) => {
         return c.json({ error: "Replies cannot have a line anchor" }, 400);
       }
 
-      const start = body.anchorStartLine;
-      const end = body.anchorEndLine ?? start;
-
-      if (!Number.isInteger(start) || start < 1) {
-        return c.json({ error: "anchorStartLine must be an integer >= 1" }, 400);
-      }
-      if (!Number.isInteger(end) || end < start) {
-        return c.json({ error: "anchorEndLine must be an integer >= anchorStartLine" }, 400);
-      }
-      if (end - start + 1 > MAX_ANCHOR_LINES) {
-        return c.json({ error: `Anchor range must be ${MAX_ANCHOR_LINES} lines or fewer` }, 400);
+      const resolved = resolveAnchor(share.file.content, body.anchorStartLine, body.anchorEndLine);
+      if (!resolved.ok) {
+        return c.json({ error: resolved.error }, 400);
       }
 
-      const fileLineCount = share.file.content.split("\n").length;
-      if (end > fileLineCount) {
-        return c.json({ error: "Anchor range exceeds the file's current line count" }, 400);
-      }
-
-      anchorStartLine = start;
-      anchorEndLine = end;
-      anchorText = computeAnchorText(share.file.content, start, end);
+      anchorStartLine = resolved.anchor.anchorStartLine;
+      anchorEndLine = resolved.anchor.anchorEndLine;
+      anchorText = resolved.anchor.anchorText;
     }
 
     let userId: string | null = null;

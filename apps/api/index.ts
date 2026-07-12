@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { cors } from "hono/cors";
-import { clerkMiddleware } from "./middleware/auth.js";
+import { StreamableHTTPTransport } from "@hono/mcp";
+import { authenticateApiKey, clerkMiddleware } from "./middleware/auth.js";
+import { createMcpServer } from "./mcp/server.js";
 import filesRoutes from "./routes/files.js";
 import sharesRoutes from "./routes/shares.js";
 import commentsRoutes from "./routes/comments.js";
@@ -47,6 +49,25 @@ app.route("/shares", sharesRoutes);
 app.route("/comments", commentsRoutes);
 app.route("/raw", rawRoutes);
 app.route("/keys", apiKeysRoutes);
+
+// MCP endpoint (Streamable HTTP): agents authenticate with an API-key bearer
+// token. A fresh, stateless server + transport is built per request.
+app.all("/mcp", async (c) => {
+  const auth = await authenticateApiKey(c);
+  if (!auth) {
+    return c.json({ error: "Unauthorized" }, 401, { "WWW-Authenticate": "Bearer" });
+  }
+
+  const server = createMcpServer(auth, c);
+  const transport = new StreamableHTTPTransport({
+    sessionIdGenerator: undefined, // stateless: no session ids
+    enableJsonResponse: true,
+  });
+  await server.connect(transport);
+
+  const response = await transport.handleRequest(c);
+  return response ?? c.body(null, 202);
+});
 
 // Export for Vercel Functions
 export const GET = handle(app);

@@ -86,6 +86,28 @@ Dev and prod are separate Neon branches - schema changes must be pushed to both.
 - `GET /api/shares/file/:fileId` - List shares for file (protected)
 - `DELETE /api/shares/:id` - Delete share (protected)
 
+## Agents / MCP
+
+Agents can publish and read documents over an [MCP](https://modelcontextprotocol.io) Streamable HTTP endpoint, authenticated with an API key (`mdv_...`, created in the app's API Keys UI).
+
+- **Endpoint**: `POST /api/mcp` (stateless Streamable HTTP; no session ids)
+- **Auth**: `Authorization: Bearer mdv_...`. Missing/invalid keys get `401` with `WWW-Authenticate: Bearer`.
+- **Implementation**: `apps/api/mcp/server.ts` (v1 MCP SDK `McpServer` + `@hono/mcp` `StreamableHTTPTransport`), mounted in `apps/api/index.ts`.
+
+Register it with Claude Code:
+
+```bash
+claude mcp add --transport http mdv https://<app>/api/mcp --header "Authorization: Bearer mdv_..."
+```
+
+**Tools** (all inputs are documented via zod `.describe()` schemas):
+- `publish_document({ name, content, comments_enabled?, allow_anonymous_comments? })` - creates a doc + share; returns `{ fileId, shareToken, shareUrl, rawUrl }`. Comments default **on** for agent-published docs. `rawUrl` is directly fetchable `text/markdown`.
+- `read_document({ token_or_url })` - returns `{ name, content, updatedAt }` for any public share (bare token or share/raw URL).
+- `update_document({ file_id_or_token, content, name? })` - replaces content (and optionally renames) a doc you own; existing links keep working.
+- `list_documents({ query? })` - your files (most recent first, max 100) with any share tokens; optional case-insensitive name filter.
+- `get_comments({ token })` - comments incl. line anchors and `isOutdated`.
+- `add_comment({ token, content, anchor_start_line?, anchor_end_line?, parent_id? })` - posts as the key's user; supports line anchors and single-level replies.
+
 ## Environment Variables
 
 Required in `.env`:
