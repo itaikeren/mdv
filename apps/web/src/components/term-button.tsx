@@ -14,7 +14,7 @@ export const TermButton = memo(function TermButton({
 }: TermButtonProps) {
   return (
     <button
-      className={`px-4 py-1.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${fullWidth ? "w-full" : ""} ${className}`}
+      className={`term-press px-4 py-1.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${fullWidth ? "w-full" : ""} ${className}`}
       style={{
         backgroundColor: "var(--term-btn-bg)",
         color: "var(--term-btn-text)",

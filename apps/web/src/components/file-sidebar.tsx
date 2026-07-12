@@ -138,14 +138,10 @@ export const FileSidebar = memo(function FileSidebar({
                   </div>
                 ) : (
                   <div
-                    className="flex items-center gap-1.5 px-2 py-1.5 md:py-1 transition-colors"
+                    className="flex items-center gap-2 px-2.5 py-1.5 transition-colors"
                     style={{
                       backgroundColor:
                         activeFileId === file.id ? "var(--term-bg-surface)" : "transparent",
-                      borderLeft:
-                        activeFileId === file.id
-                          ? "2px solid var(--term-green)"
-                          : "2px solid transparent",
                     }}
                     onMouseEnter={(e) => {
                       if (activeFileId !== file.id) {
@@ -158,6 +154,17 @@ export const FileSidebar = memo(function FileSidebar({
                       }
                     }}
                   >
+                    {/* Prompt marker: green on the open file, reserved space
+                        otherwise so names stay aligned (no side-stripe). */}
+                    <span
+                      aria-hidden="true"
+                      className="flex-shrink-0 w-1.5 text-xs leading-none"
+                      style={{
+                        color: activeFileId === file.id ? "var(--term-green)" : "transparent",
+                      }}
+                    >
+                      ›
+                    </span>
                     <button
                       onClick={() => onFileSelect(file.id)}
                       className="flex-1 text-left truncate text-xs"

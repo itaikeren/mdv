@@ -8,7 +8,7 @@ import {
   type MouseEvent,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import { SignedIn, UserButton } from "@clerk/clerk-react";
 import { Editor } from "../components/editor";
 import { Preview } from "../components/preview";
 import { ModeToggle } from "../components/mode-toggle";
@@ -294,40 +294,10 @@ export function MainApp() {
     [createFile, setViewMode],
   );
 
+  // Signed-out visitors never reach this component — HomeGate in App.tsx
+  // routes them to the landing page instead.
   return (
     <>
-      <SignedOut>
-        <div
-          className="min-h-screen flex items-center justify-center px-4"
-          style={{ backgroundColor: "var(--term-bg)" }}
-        >
-          <div className="text-center">
-            <pre
-              className="text-xs md:text-sm mb-6 leading-tight inline-block text-left"
-              style={{
-                color: "var(--term-green)",
-                fontFeatureSettings: '"liga" 0, "calt" 0',
-              }}
-            >
-              {`  __  __ ____  __     __
- |  \\/  |  _ \\ \\ \\   / /
- | |\\/| | | | | \\ \\ / /
- | |  | | |_| |  \\ V /
- |_|  |_|____/    \\_/`}
-            </pre>
-            <h1 className="text-sm font-medium mb-1" style={{ color: "var(--term-text)" }}>
-              markdown viewer
-            </h1>
-            <p className="text-xs mb-8" style={{ color: "var(--term-text-muted)" }}>
-              // sign in to start creating and sharing markdown files
-            </p>
-            <SignInButton mode="modal">
-              <TermButton className="px-5 py-2">sign_in</TermButton>
-            </SignInButton>
-          </div>
-        </div>
-      </SignedOut>
-
       <SignedIn>
         <div
           className="h-screen flex flex-col overflow-hidden"
@@ -373,44 +343,12 @@ export function MainApp() {
             </div>
             <div className="flex items-center gap-2 md:gap-3">
               <ModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-              {viewMode === "split" && (
-                <button
-                  onClick={() => setSyncScrollEnabled(!syncScrollEnabled)}
-                  className="p-1.5 transition-colors cursor-pointer hidden lg:block"
-                  title={syncScrollEnabled ? "sync scroll on" : "sync scroll off"}
-                  aria-pressed={syncScrollEnabled}
-                  style={{
-                    color: syncScrollEnabled ? "var(--term-green)" : "var(--term-text-muted)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--term-text-bright)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = syncScrollEnabled
-                      ? "var(--term-green)"
-                      : "var(--term-text-muted)";
-                  }}
-                >
-                  {syncScrollEnabled ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
-                      />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M13.181 8.68a4.503 4.503 0 011.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 006.364 6.365l3.129-3.129m5.614-5.615l1.757-1.757a4.5 4.5 0 00-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 01-1.242-.88 4.483 4.483 0 01-1.062-1.683m6.587 2.345l5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99L8.898 8.9"
-                      />
-                    </svg>
-                  )}
-                </button>
+              {activeFile && (
+                <span
+                  aria-hidden="true"
+                  className="hidden md:block w-px h-4 self-center"
+                  style={{ backgroundColor: "var(--term-border)" }}
+                />
               )}
               {activeFile && (
                 <ShareButton
@@ -454,6 +392,11 @@ export function MainApp() {
                   )}
                 </button>
               )}
+              <span
+                aria-hidden="true"
+                className="hidden md:block w-px h-4 self-center"
+                style={{ backgroundColor: "var(--term-border)" }}
+              />
               <ApiKeysModal />
               <UsernameModal />
               <ThemeToggle />
@@ -519,11 +462,17 @@ export function MainApp() {
                 </div>
               ) : files.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <p className="text-xs mb-4" style={{ color: "var(--term-text-muted)" }}>
-                      // no files found
+                  <div className="text-center max-w-xs">
+                    <p className="text-sm mb-1.5" style={{ color: "var(--term-text-bright)" }}>
+                      no documents yet
                     </p>
-                    <TermButton onClick={handleFileCreate}>new_file</TermButton>
+                    <p
+                      className="text-xs mb-5 leading-relaxed"
+                      style={{ color: "var(--term-text-muted)" }}
+                    >
+                      // start a document or import an .md file to get going
+                    </p>
+                    <TermButton onClick={handleFileCreate}>+ new_file</TermButton>
                   </div>
                 </div>
               ) : !isFileContentReady ? (
@@ -541,6 +490,10 @@ export function MainApp() {
                           value={localContent}
                           onChange={handleMarkdownChange}
                           textareaRef={editorScrollRef}
+                          syncScroll={{
+                            enabled: syncScrollEnabled,
+                            onToggle: () => setSyncScrollEnabled((v) => !v),
+                          }}
                         />
                       </div>
                       <div className="h-full min-h-64 md:min-h-96">
@@ -560,7 +513,7 @@ export function MainApp() {
                   )}
 
                   {viewMode === "preview" && (
-                    <div className="max-w-5xl mx-auto h-full">
+                    <div className="h-full">
                       <Preview key="preview-stable" markdown={deferredContent} />
                     </div>
                   )}

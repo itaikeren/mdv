@@ -6,6 +6,9 @@ interface EditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   textareaRef?: Ref<HTMLTextAreaElement>;
+  // When provided (split mode), the status bar shows a scroll-lock toggle so
+  // it lives next to the panes it affects instead of shifting the top bar.
+  syncScroll?: { enabled: boolean; onToggle: () => void };
 }
 
 interface WrapResult {
@@ -56,6 +59,7 @@ export const Editor = memo(function Editor({
   onChange,
   placeholder = "# start typing...",
   textareaRef: externalTextareaRef,
+  syncScroll,
 }: EditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -202,6 +206,51 @@ export const Editor = memo(function Editor({
         <span>
           {charCount} {charCount === 1 ? "char" : "chars"}
         </span>
+        {syncScroll && (
+          <button
+            type="button"
+            onClick={syncScroll.onToggle}
+            aria-pressed={syncScroll.enabled}
+            title={
+              syncScroll.enabled ? "scroll lock on — panes scroll together" : "scroll lock off"
+            }
+            className="term-press ml-auto hidden lg:flex items-center gap-1 transition-colors cursor-pointer"
+            style={{
+              color: syncScroll.enabled ? "var(--term-green)" : "var(--term-text-muted)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--term-text-bright)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = syncScroll.enabled
+                ? "var(--term-green)"
+                : "var(--term-text-muted)";
+            }}
+          >
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              {syncScroll.enabled ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 0h10.5a2.25 2.25 0 012.25 2.25v6.75a2.25 2.25 0 01-2.25 2.25H6.75a2.25 2.25 0 01-2.25-2.25v-6.75a2.25 2.25 0 012.25-2.25z"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                />
+              )}
+            </svg>
+            scroll_lock
+          </button>
+        )}
       </div>
     </div>
   );
