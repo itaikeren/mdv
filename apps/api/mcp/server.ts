@@ -364,6 +364,7 @@ export function createMcpServer(auth: AuthContext, c: Context): McpServer {
             anchorStartLine: comment.anchorStartLine,
             anchorEndLine: comment.anchorEndLine,
             isOutdated: isCommentOutdated(comment, share.file.content),
+            isAnonymous: comment.userId === null,
             createdAt: comment.createdAt,
           })),
         );

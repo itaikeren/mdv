@@ -21,7 +21,8 @@ export function ShareView() {
   // Fetched unconditionally (matching CommentsSection) so margin markers appear
   // for existing anchored comments even when commenting is now closed; the
   // shared React Query key dedupes this into a single request.
-  const { data: comments = [] } = useComments(shareId, true);
+  const { data: commentsData } = useComments(shareId, true);
+  const comments = commentsData?.comments ?? [];
 
   // The block hover affordance is pointer-only; hide it below lg where the
   // left-margin positioning is cramped (comments still work via the compose box).
@@ -221,7 +222,6 @@ export function ShareView() {
         </div>
         <CommentsSection
           shareId={shareId}
-          fileOwnerId={file.userId}
           commentsEnabled={commentsEnabled}
           allowAnonymousComments={allowAnonymousComments}
           pendingAnchor={pendingAnchor}

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
-import type { Comment } from "@markdown-viewer/shared";
+import type { PublicComment } from "@markdown-viewer/shared";
 import { pickBlockForLine, scrollToCommentThread } from "../utils/anchor-scroll";
 
 // Absolute-positioned overlay of comment-count badges in the preview's left
@@ -9,7 +9,7 @@ import { pickBlockForLine, scrollToCommentThread } from "../utils/anchor-scroll"
 // comments/content change and on resize.
 interface BlockCommentMarkersProps {
   wrapRef: RefObject<HTMLDivElement | null>;
-  comments: Comment[];
+  comments: PublicComment[];
   // Changes whenever the rendered markdown changes, so positions are remeasured.
   contentKey: string;
 }

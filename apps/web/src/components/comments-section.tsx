@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comments";
 import { useTheme } from "../hooks/use-theme";
 import { scrollToBlockForLine } from "../utils/anchor-scroll";
-import type { Comment } from "@markdown-viewer/shared";
+import type { PublicComment } from "@markdown-viewer/shared";
 
 // A block of source lines a comment is anchored to (1-based, inclusive).
 export interface CommentAnchor {
@@ -15,7 +15,6 @@ export interface CommentAnchor {
 
 interface CommentsSectionProps {
   shareId: string;
-  fileOwnerId: string;
   commentsEnabled: boolean;
   allowAnonymousComments: boolean;
   pendingAnchor?: CommentAnchor | null;
@@ -181,8 +180,6 @@ const REPLY_ICON = (
 
 function CommentItem({
   comment,
-  isFileOwner,
-  currentUserId,
   canReply,
   shareId,
   isReply,
@@ -190,9 +187,7 @@ function CommentItem({
   onReply,
   theme,
 }: {
-  comment: Comment;
-  isFileOwner: boolean;
-  currentUserId: string | null | undefined;
+  comment: PublicComment;
   canReply: boolean;
   shareId: string;
   isReply: boolean;
@@ -201,7 +196,8 @@ function CommentItem({
   theme: "dark" | "light";
 }) {
   const deleteComment = useDeleteComment();
-  const canDelete = (comment.userId !== null && currentUserId === comment.userId) || isFileOwner;
+  // Ownership is computed server-side (no raw user IDs on the wire).
+  const canDelete = comment.canDelete;
 
   // Anchors live only on top-level comments; replies inherit the parent's
   // context visually and never carry their own anchor.
@@ -305,7 +301,7 @@ function CommentItem({
             style={{
               margin: "0.35rem 0 0",
               padding: "0.4rem 0.6rem",
-              borderLeft: "2px solid var(--term-amber)",
+              border: "1px solid color-mix(in oklab, var(--term-amber) 45%, var(--term-border))",
               background: "var(--term-bg-surface)",
               color: "var(--term-text-muted)",
               fontFamily: "inherit",
@@ -628,26 +624,27 @@ function ComposeBox({
 
 export function CommentsSection({
   shareId,
-  fileOwnerId,
   commentsEnabled,
   allowAnonymousComments,
   pendingAnchor,
   onClearAnchor,
 }: CommentsSectionProps) {
-  const { userId, isSignedIn } = useAuth();
+  const { isSignedIn } = useAuth();
   const { theme } = useTheme();
-  const { data: comments = [], isLoading } = useComments(shareId, true);
+  const { data, isLoading } = useComments(shareId, true);
+  // Stable reference (react-query memoizes `data`) so the grouping memo below
+  // doesn't re-run every render on a fresh empty-array fallback.
+  const comments = useMemo(() => data?.comments ?? [], [data]);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  const isFileOwner = userId === fileOwnerId;
   const canCompose = commentsEnabled && (isSignedIn || allowAnonymousComments);
   const canReply = canCompose;
   const composeAsAnonymous = !isSignedIn && allowAnonymousComments;
 
   // Group comments: top-level and their replies
   const groupedComments = useMemo(() => {
-    const topLevel = comments.filter((c: Comment) => c.parentId === null);
-    const repliesMap = new Map<string, Comment[]>();
+    const topLevel = comments.filter((c: PublicComment) => c.parentId === null);
+    const repliesMap = new Map<string, PublicComment[]>();
 
     for (const comment of comments) {
       if (comment.parentId) {
@@ -657,7 +654,7 @@ export function CommentsSection({
       }
     }
 
-    return topLevel.map((comment: Comment) => ({
+    return topLevel.map((comment: PublicComment) => ({
       comment,
       replies: repliesMap.get(comment.id) ?? [],
     }));
@@ -815,8 +812,6 @@ export function CommentsSection({
               >
                 <CommentItem
                   comment={comment}
-                  isFileOwner={isFileOwner}
-                  currentUserId={commentsEnabled ? userId : null}
                   canReply={canReply}
                   shareId={shareId}
                   isReply={false}
@@ -838,7 +833,7 @@ export function CommentsSection({
                         : undefined,
                   }}
                 >
-                  {replies.map((reply: Comment, replyIndex: number) => (
+                  {replies.map((reply: PublicComment, replyIndex: number) => (
                     <div
                       key={reply.id}
                       style={{
@@ -848,8 +843,6 @@ export function CommentsSection({
                     >
                       <CommentItem
                         comment={reply}
-                        isFileOwner={isFileOwner}
-                        currentUserId={commentsEnabled ? userId : null}
                         canReply={canReply}
                         shareId={shareId}
                         isReply

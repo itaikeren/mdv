@@ -5,7 +5,7 @@ import { comments, shares, users } from "../db/schema.js";
 import { getOptionalAuth, requireAuth } from "../middleware/auth.js";
 import { isCommentOutdated, resolveAnchor } from "../lib/comment-outdated.js";
 import { maskEmail, toPublicAuthor } from "../lib/comment-author.js";
-import type { CreateCommentInput } from "@markdown-viewer/shared";
+import type { CreateCommentInput, PublicComment } from "@markdown-viewer/shared";
 
 const MAX_AUTHOR_NAME_LENGTH = 50;
 
@@ -15,11 +15,16 @@ function isShareExpired(share: { expiresAt: Date | null }): boolean {
   return share.expiresAt !== null && new Date(share.expiresAt) < new Date();
 }
 
-// Get all comments for a share (public - always returns comments for read-only display)
+// Get all comments for a share (public - always returns comments for read-only
+// display). The viewer may be anonymous, a Clerk session, or a bearer key; we
+// resolve them so `canDelete` / `viewerIsFileOwner` can be computed server-side
+// and no raw Clerk user ID ever appears on the wire.
 app.get("/:shareId", async (c) => {
   const { shareId } = c.req.param();
 
   try {
+    const auth = await getOptionalAuth(c);
+
     const share = await db.query.shares.findFirst({
       where: eq(shares.id, shareId),
       with: { file: true },
@@ -33,19 +38,31 @@ app.get("/:shareId", async (c) => {
       return c.json({ error: "Share has expired" }, 410);
     }
 
+    const viewerIsFileOwner = auth?.userId === share.file.userId;
+
     const shareComments = await db
       .select()
       .from(comments)
       .where(eq(comments.shareId, shareId))
       .orderBy(comments.createdAt);
 
-    return c.json(
-      shareComments.map((comment) => ({
-        ...comment,
-        userEmail: toPublicAuthor(comment),
-        isOutdated: isCommentOutdated(comment, share.file.content),
-      })),
-    );
+    // Project explicit columns — never spread the raw row, which carries userId.
+    const projected: PublicComment[] = shareComments.map((comment) => ({
+      id: comment.id,
+      shareId: comment.shareId,
+      content: comment.content,
+      parentId: comment.parentId,
+      anchorStartLine: comment.anchorStartLine,
+      anchorEndLine: comment.anchorEndLine,
+      anchorText: comment.anchorText,
+      createdAt: comment.createdAt,
+      userEmail: toPublicAuthor(comment),
+      isOutdated: isCommentOutdated(comment, share.file.content),
+      isAnonymous: comment.userId === null,
+      canDelete: auth !== null && (comment.userId === auth.userId || viewerIsFileOwner),
+    }));
+
+    return c.json({ comments: projected, viewerIsFileOwner });
   } catch (error) {
     console.error("Error fetching comments:", error);
     return c.json({ error: "Failed to fetch comments" }, 500);
@@ -183,7 +200,24 @@ app.post("/", async (c) => {
       })
       .returning();
 
-    return c.json(newComment, 201);
+    // Project the same public shape as GET so userId never appears on any
+    // public comment response. The author can always delete what they just made.
+    const created: PublicComment = {
+      id: newComment.id,
+      shareId: newComment.shareId,
+      content: newComment.content,
+      parentId: newComment.parentId,
+      anchorStartLine: newComment.anchorStartLine,
+      anchorEndLine: newComment.anchorEndLine,
+      anchorText: newComment.anchorText,
+      createdAt: newComment.createdAt,
+      userEmail: toPublicAuthor(newComment),
+      isOutdated: isCommentOutdated(newComment, share.file.content),
+      isAnonymous: newComment.userId === null,
+      canDelete: true,
+    };
+
+    return c.json(created, 201);
   } catch (error) {
     console.error("Error creating comment:", error);
     return c.json({ error: "Failed to create comment" }, 500);
