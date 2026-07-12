@@ -1,8 +1,17 @@
 import React, { useEffect, useState, memo, lazy, Suspense } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useTheme } from "../hooks/use-theme";
+import { rehypeSourceLines } from "../utils/rehype-source-lines";
+
+// Source line range stamped by rehypeSourceLines; custom components drop
+// unknown props, so each must forward these onto its outermost element for
+// sync scroll anchoring to work.
+interface SourceLineProps {
+  "data-line"?: string | number;
+  "data-line-end"?: string | number;
+}
 
 // Mermaid is heavy - only download it when a document actually contains a diagram
 const Mermaid = lazy(() => import("./mermaid").then((m) => ({ default: m.Mermaid })));
@@ -51,14 +60,24 @@ function extractText(node: ReactNode): string {
 }
 
 // Custom heading components with IDs for anchor links
-function HeadingRenderer({ level, children }: { level: number; children: ReactNode }) {
+function HeadingRenderer({
+  level,
+  children,
+  "data-line": dataLine,
+  "data-line-end": dataLineEnd,
+}: { level: number; children: ReactNode } & SourceLineProps) {
   const text = extractText(children);
   const id = generateHeadingId(text);
 
   const HeadingTag = `h${level}` as keyof React.JSX.IntrinsicElements;
 
   return (
-    <HeadingTag id={id} className={`heading-${level}`}>
+    <HeadingTag
+      id={id}
+      className={`heading-${level}`}
+      data-line={dataLine}
+      data-line-end={dataLineEnd}
+    >
       {children}
     </HeadingTag>
   );
@@ -111,46 +130,95 @@ function LinkRenderer({ href, children }: { href?: string; children: ReactNode }
 
 interface PreviewProps {
   markdown: string;
+  scrollRef?: Ref<HTMLDivElement>;
 }
 
-interface CodeBlockProps {
+interface CodeBlockProps extends SourceLineProps {
   children?: ReactNode;
   className?: string;
 }
 
-function PreWrapper({ children }: { children?: ReactNode }) {
-  return <div>{children}</div>;
+type WrapperProps = { children?: ReactNode } & SourceLineProps;
+
+function PreWrapper({
+  children,
+  "data-line": dataLine,
+  "data-line-end": dataLineEnd,
+}: WrapperProps) {
+  return (
+    <div data-line={dataLine} data-line-end={dataLineEnd}>
+      {children}
+    </div>
+  );
 }
 
-function H1Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={1}>{children}</HeadingRenderer>;
+function H1Wrapper({ children, ...lines }: WrapperProps) {
+  return (
+    <HeadingRenderer level={1} {...pickSourceLines(lines)}>
+      {children}
+    </HeadingRenderer>
+  );
 }
 
-function H2Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={2}>{children}</HeadingRenderer>;
+function H2Wrapper({ children, ...lines }: WrapperProps) {
+  return (
+    <HeadingRenderer level={2} {...pickSourceLines(lines)}>
+      {children}
+    </HeadingRenderer>
+  );
 }
 
-function H3Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={3}>{children}</HeadingRenderer>;
+function H3Wrapper({ children, ...lines }: WrapperProps) {
+  return (
+    <HeadingRenderer level={3} {...pickSourceLines(lines)}>
+      {children}
+    </HeadingRenderer>
+  );
 }
 
-function H4Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={4}>{children}</HeadingRenderer>;
+function H4Wrapper({ children, ...lines }: WrapperProps) {
+  return (
+    <HeadingRenderer level={4} {...pickSourceLines(lines)}>
+      {children}
+    </HeadingRenderer>
+  );
 }
 
-function H5Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={5}>{children}</HeadingRenderer>;
+function H5Wrapper({ children, ...lines }: WrapperProps) {
+  return (
+    <HeadingRenderer level={5} {...pickSourceLines(lines)}>
+      {children}
+    </HeadingRenderer>
+  );
 }
 
-function H6Wrapper({ children }: { children?: ReactNode }) {
-  return <HeadingRenderer level={6}>{children}</HeadingRenderer>;
+function H6Wrapper({ children, ...lines }: WrapperProps) {
+  return (
+    <HeadingRenderer level={6} {...pickSourceLines(lines)}>
+      {children}
+    </HeadingRenderer>
+  );
+}
+
+// react-markdown passes extra runtime props (e.g. the hast node) that must
+// not leak onto DOM elements, so forward only the data-line pair.
+function pickSourceLines(props: SourceLineProps): SourceLineProps {
+  return {
+    "data-line": props["data-line"],
+    "data-line-end": props["data-line-end"],
+  };
 }
 
 function LinkWrapper({ href, children }: { href?: string; children?: ReactNode }) {
   return <LinkRenderer href={href}>{children}</LinkRenderer>;
 }
 
-const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlockProps) {
+const CodeBlock = React.memo(function CodeBlock({
+  children,
+  className,
+  "data-line": dataLine,
+  "data-line-end": dataLineEnd,
+}: CodeBlockProps) {
   const { theme } = useTheme();
   const [highlightedCode, setHighlightedCode] = useState<string>("");
 
@@ -198,9 +266,11 @@ const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlo
   // Mermaid diagram
   if (isMermaid) {
     return (
-      <Suspense fallback={<MermaidFallback />}>
-        <Mermaid chart={code} />
-      </Suspense>
+      <div data-line={dataLine} data-line-end={dataLineEnd}>
+        <Suspense fallback={<MermaidFallback />}>
+          <Mermaid chart={code} />
+        </Suspense>
+      </div>
     );
   }
 
@@ -213,6 +283,8 @@ const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlo
           backgroundColor: "var(--term-bg-surface)",
           border: "1px solid var(--term-border)",
         }}
+        data-line={dataLine}
+        data-line-end={dataLineEnd}
       >
         <code style={{ color: "var(--term-text)" }}>{children}</code>
       </pre>
@@ -226,6 +298,8 @@ const CodeBlock = React.memo(function CodeBlock({ children, className }: CodeBlo
         border: "1px solid var(--term-border)",
         backgroundColor: "var(--term-bg-surface)",
       }}
+      data-line={dataLine}
+      data-line-end={dataLineEnd}
       dangerouslySetInnerHTML={{ __html: highlightedCode }}
     />
   );
@@ -244,10 +318,12 @@ const MARKDOWN_COMPONENTS = {
 };
 
 const MARKDOWN_PLUGINS = [remarkGfm];
+const REHYPE_PLUGINS = [rehypeSourceLines];
 
-export const Preview = memo(function Preview({ markdown }: PreviewProps) {
+export const Preview = memo(function Preview({ markdown, scrollRef }: PreviewProps) {
   return (
     <div
+      ref={scrollRef}
       className="h-full overflow-y-auto p-4"
       style={{
         backgroundColor: "var(--term-bg-raised)",
@@ -256,7 +332,11 @@ export const Preview = memo(function Preview({ markdown }: PreviewProps) {
     >
       {markdown ? (
         <div className="prose prose-sm prose-invert max-w-none">
-          <ReactMarkdown remarkPlugins={MARKDOWN_PLUGINS} components={MARKDOWN_COMPONENTS}>
+          <ReactMarkdown
+            remarkPlugins={MARKDOWN_PLUGINS}
+            rehypePlugins={REHYPE_PLUGINS}
+            components={MARKDOWN_COMPONENTS}
+          >
             {markdown}
           </ReactMarkdown>
         </div>

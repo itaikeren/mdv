@@ -19,13 +19,21 @@ import { ShareButton } from "../components/share-button";
 import { ThemeToggle } from "../components/theme-toggle";
 import { TermButton } from "../components/term-button";
 import { useFiles, useFile, useCreateFile, useUpdateFile, useDeleteFile } from "../hooks/use-files";
+import { useSyncScroll } from "../hooks/use-sync-scroll";
 import { filesApi } from "../lib/api";
-import { loadViewMode, saveViewMode, type ViewMode } from "../utils/storage";
+import {
+  loadSyncScroll,
+  loadViewMode,
+  saveSyncScroll,
+  saveViewMode,
+  type ViewMode,
+} from "../utils/storage";
 import type { MarkdownFileMeta } from "@markdown-viewer/shared";
 
 export function MainApp() {
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
+  const [syncScrollEnabled, setSyncScrollEnabled] = useState(() => loadSyncScroll());
   // Start closed on mobile so the sidebar dialog doesn't pop open on first load
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [localContent, setLocalContent] = useState<string>("");
@@ -85,6 +93,11 @@ export function MainApp() {
     saveViewMode(viewMode);
   }, [viewMode]);
 
+  // Save sync scroll preference whenever it changes
+  useEffect(() => {
+    saveSyncScroll(syncScrollEnabled);
+  }, [syncScrollEnabled]);
+
   // Sync local content with active file (only once its content has loaded,
   // so a pending fetch never wipes the editor)
   useEffect(() => {
@@ -100,6 +113,20 @@ export function MainApp() {
   // Keystrokes update localContent immediately; the preview renders from the
   // deferred value so markdown parsing never blocks typing
   const deferredContent = useDeferredValue(localContent);
+
+  // Editor/preview scroll sync (split mode on lg+ screens only). The enabled
+  // flag also tracks whether the split panes are actually mounted, so the
+  // hook re-binds its listeners once the editor/preview elements exist
+  const editorScrollRef = useRef<HTMLTextAreaElement | null>(null);
+  const previewScrollRef = useRef<HTMLDivElement | null>(null);
+  const splitPanesMounted =
+    viewMode === "split" && !isLoading && files.length > 0 && isFileContentReady;
+  useSyncScroll({
+    enabled: syncScrollEnabled && splitPanesMounted,
+    editorRef: editorScrollRef,
+    previewRef: previewScrollRef,
+    content: localContent,
+  });
 
   // Cleanup debounce timers on unmount
   useEffect(() => {
@@ -344,6 +371,45 @@ export function MainApp() {
             </div>
             <div className="flex items-center gap-2 md:gap-3">
               <ModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+              {viewMode === "split" && (
+                <button
+                  onClick={() => setSyncScrollEnabled(!syncScrollEnabled)}
+                  className="p-1.5 transition-colors cursor-pointer hidden lg:block"
+                  title={syncScrollEnabled ? "sync scroll on" : "sync scroll off"}
+                  aria-pressed={syncScrollEnabled}
+                  style={{
+                    color: syncScrollEnabled ? "var(--term-green)" : "var(--term-text-muted)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--term-text-bright)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = syncScrollEnabled
+                      ? "var(--term-green)"
+                      : "var(--term-text-muted)";
+                  }}
+                >
+                  {syncScrollEnabled ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+                      />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M13.181 8.68a4.503 4.503 0 011.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 006.364 6.365l3.129-3.129m5.614-5.615l1.757-1.757a4.5 4.5 0 00-6.364-6.365l-4.5 4.5c-.258.26-.479.541-.661.84m1.903 6.405a4.495 4.495 0 01-1.242-.88 4.483 4.483 0 01-1.062-1.683m6.587 2.345l5.907 5.907m-5.907-5.907L8.898 8.898M2.991 2.99L8.898 8.9"
+                      />
+                    </svg>
+                  )}
+                </button>
+              )}
               {activeFile && <ShareButton fileId={activeFile.id} fileName={activeFile.name} />}
               {activeFile && (
                 <button
@@ -460,10 +526,18 @@ export function MainApp() {
                   {viewMode === "split" && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 h-full max-w-7xl mx-auto">
                       <div className="h-full min-h-64 md:min-h-96">
-                        <Editor value={localContent} onChange={handleMarkdownChange} />
+                        <Editor
+                          value={localContent}
+                          onChange={handleMarkdownChange}
+                          textareaRef={editorScrollRef}
+                        />
                       </div>
                       <div className="h-full min-h-64 md:min-h-96">
-                        <Preview key="preview-stable" markdown={deferredContent} />
+                        <Preview
+                          key="preview-stable"
+                          markdown={deferredContent}
+                          scrollRef={previewScrollRef}
+                        />
                       </div>
                     </div>
                   )}

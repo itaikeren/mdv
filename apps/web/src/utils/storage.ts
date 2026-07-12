@@ -1,6 +1,7 @@
 const STORAGE_KEY_FILES = "markdown-viewer-files";
 const STORAGE_KEY_ACTIVE = "markdown-viewer-active";
 const STORAGE_KEY_VIEW_MODE = "markdown-viewer-view-mode";
+const STORAGE_KEY_SYNC_SCROLL = "markdown-viewer-sync-scroll";
 const LEGACY_STORAGE_KEY = "markdown-viewer-content";
 
 export type ViewMode = "split" | "edit" | "preview";
@@ -120,5 +121,22 @@ export function loadViewMode(): ViewMode {
   } catch (error) {
     console.warn("Failed to load view mode from localStorage:", error);
     return "split";
+  }
+}
+
+export function saveSyncScroll(enabled: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_SYNC_SCROLL, String(enabled));
+  } catch (error) {
+    console.warn("Failed to save sync scroll to localStorage:", error);
+  }
+}
+
+export function loadSyncScroll(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY_SYNC_SCROLL) !== "false"; // default on
+  } catch (error) {
+    console.warn("Failed to load sync scroll from localStorage:", error);
+    return true;
   }
 }

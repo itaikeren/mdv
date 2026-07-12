@@ -1,9 +1,12 @@
 import React, { memo, useCallback, useMemo, useRef } from "react";
+import type { Ref, UIEventHandler } from "react";
 
 interface EditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  textareaRef?: Ref<HTMLTextAreaElement>;
+  onScroll?: UIEventHandler<HTMLTextAreaElement>;
 }
 
 interface WrapResult {
@@ -53,8 +56,24 @@ export const Editor = memo(function Editor({
   value,
   onChange,
   placeholder = "# start typing...",
+  textareaRef: externalTextareaRef,
+  onScroll,
 }: EditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Keep the internal ref (used for selection restore) while also exposing
+  // the textarea to callers that need scroll access
+  const mergedTextareaRef = useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      textareaRef.current = node;
+      if (typeof externalTextareaRef === "function") {
+        externalTextareaRef(node);
+      } else if (externalTextareaRef) {
+        externalTextareaRef.current = node;
+      }
+    },
+    [externalTextareaRef],
+  );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -156,10 +175,11 @@ export const Editor = memo(function Editor({
       }}
     >
       <textarea
-        ref={textareaRef}
+        ref={mergedTextareaRef}
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onScroll={onScroll}
         placeholder={placeholder}
         className="w-full flex-1 min-h-96 resize-none outline-none text-xs leading-relaxed p-4"
         style={{
