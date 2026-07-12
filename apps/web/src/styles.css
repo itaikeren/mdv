@@ -2,13 +2,13 @@
 @plugin "@tailwindcss/typography";
 
 @layer base {
+  /* Self-hosted fonts: no third-party DNS/TLS handshake blocking first paint */
   @font-face {
     font-family: "JetBrains Mono";
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    src: url("https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/webfonts/JetBrainsMono-Regular.woff2")
-      format("woff2");
+    src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2");
   }
 
   @font-face {
@@ -16,14 +16,12 @@
     font-style: normal;
     font-weight: 700;
     font-display: swap;
-    src: url("https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@2.304/fonts/webfonts/JetBrainsMono-Bold.woff2")
-      format("woff2");
+    src: url("/fonts/JetBrainsMono-Bold.woff2") format("woff2");
   }
 
   @font-face {
     font-family: "0xProto";
-    src: url("https://cdn.jsdelivr.net/gh/0xType/0xProto@1.602/fonts/0xProto-Regular.woff2")
-      format("woff2");
+    src: url("/fonts/0xProto-Regular.woff2") format("woff2");
     font-weight: normal;
     font-style: normal;
     font-display: swap;
