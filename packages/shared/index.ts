@@ -101,17 +101,24 @@ export interface ShareResponse {
   shareToken: string
 }
 
+// Authority level of an API key: "docs" (document/share/comment operations —
+// what the MCP tools do) or "full" (also account-shaping REST: username claim,
+// public publishing). New keys default to "docs"; pre-scope keys are "full".
+export type ApiKeyScope = "docs" | "full"
+
 // API key metadata; the key hash and plaintext are never exposed here.
 export interface ApiKey {
   id: string
   name: string
   keyPrefix: string
+  scope: ApiKeyScope
   createdAt: Date
   lastUsedAt: Date | null
 }
 
 export interface CreateApiKeyInput {
   name: string
+  scope?: ApiKeyScope
 }
 
 // The plaintext `key` is returned exactly once, at creation time.

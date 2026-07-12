@@ -1,8 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApiKeys, useCreateApiKey, useDeleteApiKey } from "../hooks/use-api-keys";
-import type { ApiKey, CreateApiKeyResponse } from "@markdown-viewer/shared";
+import type { ApiKey, ApiKeyScope, CreateApiKeyResponse } from "@markdown-viewer/shared";
 
 const MAX_KEY_NAME_LENGTH = 100;
+
+const SCOPE_OPTIONS: { value: ApiKeyScope; label: string; hint: string }[] = [
+  {
+    value: "docs",
+    label: "docs",
+    hint: "publish, read & comment on documents — recommended for agents",
+  },
+  {
+    value: "full",
+    label: "full",
+    hint: "everything, including username and public publishing",
+  },
+];
 
 function CopyIcon({ copied }: { copied: boolean }) {
   return copied ? (
@@ -68,6 +81,7 @@ function formatDate(value: Date | string): string {
 export function ApiKeysModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyScope, setNewKeyScope] = useState<ApiKeyScope>("docs");
   const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(null);
 
   const { data: keys = [], isLoading } = useApiKeys(isOpen);
@@ -78,17 +92,19 @@ export function ApiKeysModal() {
     setIsOpen(false);
     setCreatedKey(null);
     setNewKeyName("");
+    setNewKeyScope("docs");
   }, []);
 
   const handleCreate = () => {
     const name = newKeyName.trim();
     if (!name) return;
     createApiKey.mutate(
-      { name },
+      { name, scope: newKeyScope },
       {
         onSuccess: (data) => {
           setCreatedKey(data);
           setNewKeyName("");
+          setNewKeyScope("docs");
         },
       },
     );
@@ -240,50 +256,108 @@ export function ApiKeysModal() {
                 </div>
               ) : (
                 /* Create form */
-                <div className="flex items-center gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={newKeyName}
-                    onChange={(e) => setNewKeyName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleCreate();
-                    }}
-                    placeholder="e.g. claude-code on macbook"
-                    maxLength={MAX_KEY_NAME_LENGTH}
-                    className="flex-1 min-w-0 px-2.5 py-2 text-xs border outline-none"
-                    style={{
-                      backgroundColor: "var(--term-bg-surface)",
-                      borderColor: "var(--term-border)",
-                      color: "var(--term-text)",
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = "var(--term-border-focus)";
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = "var(--term-border)";
-                    }}
-                  />
-                  <button
-                    onClick={handleCreate}
-                    disabled={createApiKey.isPending || !newKeyName.trim()}
-                    className="px-3 py-2 text-xs transition-colors cursor-pointer border border-dashed flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{
-                      borderColor: "var(--term-border)",
-                      color: "var(--term-text)",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!createApiKey.isPending && newKeyName.trim()) {
-                        e.currentTarget.style.borderColor = "var(--term-green)";
-                        e.currentTarget.style.color = "var(--term-green)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "var(--term-border)";
-                      e.currentTarget.style.color = "var(--term-text)";
-                    }}
-                  >
-                    {createApiKey.isPending ? "creating..." : "create key"}
-                  </button>
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newKeyName}
+                      onChange={(e) => setNewKeyName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleCreate();
+                      }}
+                      placeholder="e.g. claude-code on macbook"
+                      maxLength={MAX_KEY_NAME_LENGTH}
+                      className="flex-1 min-w-0 px-2.5 py-2 text-xs border outline-none"
+                      style={{
+                        backgroundColor: "var(--term-bg-surface)",
+                        borderColor: "var(--term-border)",
+                        color: "var(--term-text)",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = "var(--term-border-focus)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = "var(--term-border)";
+                      }}
+                    />
+                    <button
+                      onClick={handleCreate}
+                      disabled={createApiKey.isPending || !newKeyName.trim()}
+                      className="px-3 py-2 text-xs transition-colors cursor-pointer border border-dashed flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        borderColor: "var(--term-border)",
+                        color: "var(--term-text)",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!createApiKey.isPending && newKeyName.trim()) {
+                          e.currentTarget.style.borderColor = "var(--term-green)";
+                          e.currentTarget.style.color = "var(--term-green)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = "var(--term-border)";
+                        e.currentTarget.style.color = "var(--term-text)";
+                      }}
+                    >
+                      {createApiKey.isPending ? "creating..." : "create key"}
+                    </button>
+                  </div>
+
+                  {/* Scope picker */}
+                  <div className="space-y-1.5">
+                    <p
+                      className="text-[10px] font-medium"
+                      style={{ color: "var(--term-text-muted)" }}
+                    >
+                      scope
+                    </p>
+                    {SCOPE_OPTIONS.map((option) => {
+                      const selected = newKeyScope === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setNewKeyScope(option.value)}
+                          className="w-full flex items-start gap-2 p-2.5 text-left border transition-colors cursor-pointer"
+                          style={{
+                            backgroundColor: "var(--term-bg-surface)",
+                            borderColor: selected ? "var(--term-green)" : "var(--term-border)",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!selected) e.currentTarget.style.borderColor = "var(--term-text)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!selected) e.currentTarget.style.borderColor = "var(--term-border)";
+                          }}
+                        >
+                          <span
+                            className="mt-0.5 text-[10px] font-mono flex-shrink-0"
+                            style={{
+                              color: selected ? "var(--term-green)" : "var(--term-text-muted)",
+                            }}
+                          >
+                            {selected ? "[x]" : "[ ]"}
+                          </span>
+                          <span className="min-w-0">
+                            <span
+                              className="text-xs font-medium"
+                              style={{
+                                color: selected ? "var(--term-green)" : "var(--term-text)",
+                              }}
+                            >
+                              {option.label}
+                            </span>
+                            <span
+                              className="block text-[10px] mt-0.5"
+                              style={{ color: "var(--term-text-muted)" }}
+                            >
+                              {option.hint}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -327,6 +401,16 @@ export function ApiKeysModal() {
                           >
                             {key.name}
                           </p>
+                          <span
+                            className="text-[10px] font-mono px-1.5 py-0.5 border flex-shrink-0"
+                            style={{
+                              color: "var(--term-text-muted)",
+                              borderColor: "var(--term-border)",
+                            }}
+                            title={`${key.scope} scope`}
+                          >
+                            {key.scope}
+                          </span>
                           <button
                             onClick={() => handleRevoke(key)}
                             className="p-1 transition-colors flex-shrink-0 cursor-pointer"

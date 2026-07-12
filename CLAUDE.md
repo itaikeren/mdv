@@ -94,6 +94,7 @@ Abuse-prone writes carry Postgres-backed fixed-window rate limits (`apps/api/lib
 
 Agents can publish and read documents over an [MCP](https://modelcontextprotocol.io) Streamable HTTP endpoint, authenticated with an API key (`mdv_...`, created in the app's API Keys UI).
 
+- **Scopes**: keys are `docs` (new-key default) or `full`. All MCP tools work with a `docs`-scope key; `full` is only needed for account-shaping REST calls (`PATCH /api/users/me`, and `PUT /api/files/:id` with `visibility`/`slug`). Pre-scope keys are grandfathered `full`.
 - **Endpoint**: `/api/mcp` (stateless Streamable HTTP, JSON-RPC over POST; no session ids)
 - **Auth**: `Authorization: Bearer mdv_...`. Missing/invalid keys get `401` with `WWW-Authenticate: Bearer`.
 - **Implementation**: `apps/api/mcp/server.ts` (v1 MCP SDK `McpServer` + `@hono/mcp` `StreamableHTTPTransport`), mounted in `apps/api/index.ts`.

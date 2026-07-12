@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { eq, and, ne, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { files, users } from "../db/schema.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requireFullScope } from "../middleware/auth.js";
 import { SLUG_REGEX, deriveUniqueSlug } from "../lib/slug.js";
 import { isUniqueViolation } from "../lib/db-errors.js";
 import { RATE_LIMITS, checkRateLimit, tooManyRequests } from "../lib/rate-limit.js";
@@ -143,6 +143,15 @@ app.put("/:id", async (c) => {
 
   try {
     const body = await c.req.json<UpdateFileInput>();
+
+    // Changing visibility or slug shapes the public profile — that is
+    // account-shaping, so docs-scope keys are refused. Name/content-only PUTs
+    // stay docs-allowed. This runs before the public-visibility slug auto-derive
+    // (which only triggers on visibility === "public"), so there is no bypass.
+    if (body.visibility !== undefined || body.slug !== undefined) {
+      const scopeError = requireFullScope(c, auth);
+      if (scopeError) return scopeError;
+    }
 
     const validationError = validateFileInput(body.name, body.content);
     if (validationError) {

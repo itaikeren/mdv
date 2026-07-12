@@ -108,6 +108,11 @@ export const apiKeys = pgTable(
     keyHash: text("key_hash").unique().notNull(),
     // First 12 chars of the key (e.g. "mdv_a1b2c3d4") for display only
     keyPrefix: text("key_prefix").notNull(),
+    // Authority level: "docs" (document/share/comment ops — what the MCP tools
+    // do) or "full" (also account-shaping REST: username claim, public
+    // publishing). Default "full" so pre-scope rows are grandfathered; the route
+    // sets "docs" explicitly for newly created keys.
+    scope: text("scope").default("full").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     lastUsedAt: timestamp("last_used_at"),
   },

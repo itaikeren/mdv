@@ -34,6 +34,7 @@ app.get("/", async (c) => {
         id: apiKeys.id,
         name: apiKeys.name,
         keyPrefix: apiKeys.keyPrefix,
+        scope: apiKeys.scope,
         createdAt: apiKeys.createdAt,
         lastUsedAt: apiKeys.lastUsedAt,
       })
@@ -65,6 +66,12 @@ app.post("/", async (c) => {
     }
     if (name.length > MAX_KEY_NAME_LENGTH) {
       return c.json({ error: `Key name must be ${MAX_KEY_NAME_LENGTH} characters or less` }, 400);
+    }
+
+    // New keys default to the least-privilege "docs" scope; "full" is opt-in.
+    const scope = body.scope ?? "docs";
+    if (scope !== "docs" && scope !== "full") {
+      return c.json({ error: "Scope must be 'docs' or 'full'" }, 400);
     }
 
     const withinRate = await checkRateLimit(
@@ -105,11 +112,13 @@ app.post("/", async (c) => {
         name,
         keyHash: hash,
         keyPrefix: prefix,
+        scope,
       })
       .returning({
         id: apiKeys.id,
         name: apiKeys.name,
         keyPrefix: apiKeys.keyPrefix,
+        scope: apiKeys.scope,
         createdAt: apiKeys.createdAt,
         lastUsedAt: apiKeys.lastUsedAt,
       });
