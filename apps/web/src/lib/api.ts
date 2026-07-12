@@ -8,6 +8,9 @@ import type {
   ShareResponse,
   Share,
   Comment,
+  ApiKey,
+  CreateApiKeyInput,
+  CreateApiKeyResponse,
 } from "@markdown-viewer/shared";
 
 const API_BASE = "/api";
@@ -116,6 +119,22 @@ export const commentsApi = {
 
   delete: (id: string): Promise<{ success: boolean }> =>
     fetchWithAuth(`${API_BASE}/comments/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// API Keys API
+export const apiKeysApi = {
+  getAll: (): Promise<ApiKey[]> => fetchWithAuth(`${API_BASE}/keys`),
+
+  create: (data: CreateApiKeyInput): Promise<CreateApiKeyResponse> =>
+    fetchWithAuth(`${API_BASE}/keys`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string): Promise<{ success: boolean }> =>
+    fetchWithAuth(`${API_BASE}/keys/${id}`, {
       method: "DELETE",
     }),
 };

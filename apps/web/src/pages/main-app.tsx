@@ -16,6 +16,7 @@ import { ScrollToTopButton } from "../components/scroll-to-top";
 import { FileSidebar } from "../components/file-sidebar";
 import { MobileSidebar } from "../components/mobile-sidebar";
 import { ShareButton } from "../components/share-button";
+import { ApiKeysModal } from "../components/api-keys-modal";
 import { ThemeToggle } from "../components/theme-toggle";
 import { TermButton } from "../components/term-button";
 import { useFiles, useFile, useCreateFile, useUpdateFile, useDeleteFile } from "../hooks/use-files";
@@ -445,6 +446,7 @@ export function MainApp() {
                   )}
                 </button>
               )}
+              <ApiKeysModal />
               <ThemeToggle />
               <UserButton />
             </div>
