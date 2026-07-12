@@ -9,6 +9,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
+    "db:push:prod": "DB_TARGET=prod drizzle-kit push",
     "lint": "oxlint",
     "format": "oxfmt --write .",
     "format:check": "oxfmt .",

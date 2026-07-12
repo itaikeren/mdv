@@ -60,9 +60,12 @@ The ticket consumer (`apps/web/src/dev/agent-auth.tsx`) only exists in dev build
 - `pnpm -F <package> format:check` - Check formatting
 
 ### Database (from apps/api)
-- `pnpm db:push` - Push schema changes to database
+- `pnpm db:push` - Push schema changes to the dev database (DATABASE_URL)
+- `pnpm db:push:prod` - Push schema changes to the production database (DATABASE_URL_PROD)
 - `pnpm db:studio` - Open Drizzle Studio
 - `pnpm db:generate` - Generate migrations
+
+Dev and prod are separate Neon branches - schema changes must be pushed to both.
 
 ### Package Manager
 - **Always use pnpm** (not npm or yarn)
@@ -89,7 +92,8 @@ Required in `.env`:
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
-DATABASE_URL=postgresql://...@....neon.tech/...
+DATABASE_URL=postgresql://...@....neon.tech/...          # dev Neon branch
+DATABASE_URL_PROD=postgresql://...@....neon.tech/...     # prod Neon branch (db:push:prod)
 ```
 
 Optional:
