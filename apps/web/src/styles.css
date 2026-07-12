@@ -26,6 +26,15 @@
     font-style: normal;
     font-display: swap;
   }
+
+  /* Landing page display face (variable weight, latin subset, ~46KB) */
+  @font-face {
+    font-family: "Schibsted Grotesk";
+    src: url("/fonts/SchibstedGrotesk-Variable.woff2") format("woff2");
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+  }
 }
 
 /* Dark theme (default) */
@@ -179,4 +188,126 @@ pre,
 }
 .mdv-anchor-flash {
   animation: mdv-anchor-flash 1.2s ease-out;
+}
+
+/* ---------------------------------------------------------------------------
+   Landing page (signed-out homepage)
+
+   The global `*` monospace rule above wins over Tailwind's layered font
+   utilities, so the landing opts into its display face with an unlayered
+   class. Intentional mono inside a `.landing-sans` subtree still works via
+   the `!important` mono rule (use `font-mono`).
+--------------------------------------------------------------------------- */
+.landing-sans,
+.landing-sans * {
+  font-family:
+    "Schibsted Grotesk",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+}
+
+.landing :is(a, button, summary):focus-visible {
+  outline: 1px solid var(--term-green);
+  outline-offset: 3px;
+}
+
+/* One orchestrated page-load reveal; children opt in with --reveal-i */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes landing-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .landing-reveal {
+    animation: landing-reveal 0.65s cubic-bezier(0.25, 1, 0.5, 1) both;
+    animation-delay: calc(var(--reveal-i, 0) * 90ms);
+  }
+
+  @keyframes landing-caret {
+    0%,
+    45% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+  .landing-caret {
+    animation: landing-caret 1.1s step-end infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Rendered-markdown reading surface (editor preview + public share view)
+
+   The document is the product, so the reading experience gets real attention.
+   Monospace on a dark surface reads a touch lighter, so leading runs generous
+   and headings get more air above than below to group each section visually.
+--------------------------------------------------------------------------- */
+.prose :where(p, li) {
+  line-height: 1.75;
+}
+
+.prose {
+  text-wrap: pretty;
+}
+
+.prose :where(h1, h2, h3, h4, h5, h6) {
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+
+.prose :where(h1) {
+  letter-spacing: -0.02em;
+}
+
+/* Section rhythm: a hairline + extra air introduces each top-level section,
+   giving a long document scannable structure without heavy dividers. */
+.prose :where(h2) {
+  margin-top: 2em;
+  padding-top: 0.85em;
+  border-top: 1px solid var(--term-border);
+}
+
+.prose :where(h3) {
+  margin-top: 1.6em;
+}
+
+/* Never push the very first block down, and never rule above a leading heading. */
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose :where(h2):first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   App-wide keyboard focus + press feedback
+
+   The app leans on hover handlers and previously showed nothing for keyboard
+   users. A single low-specificity ring covers native controls; Clerk renders
+   its own widgets in isolation, so this doesn't fight them.
+--------------------------------------------------------------------------- */
+:where(button, a, input, textarea, select, summary, [role="button"]):focus-visible {
+  outline: 1px solid var(--term-green);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .term-press {
+    transition: transform 0.06s ease-out;
+  }
+  .term-press:active {
+    transform: translateY(1px);
+  }
 }
