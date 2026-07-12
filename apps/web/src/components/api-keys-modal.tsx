@@ -74,11 +74,11 @@ export function ApiKeysModal() {
   const createApiKey = useCreateApiKey();
   const deleteApiKey = useDeleteApiKey();
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsOpen(false);
     setCreatedKey(null);
     setNewKeyName("");
-  };
+  }, []);
 
   const handleCreate = () => {
     const name = newKeyName.trim();
@@ -100,9 +100,12 @@ export function ApiKeysModal() {
     }
   };
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") setIsOpen(false);
-  }, []);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    },
+    [handleClose],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
