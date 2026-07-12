@@ -1,4 +1,13 @@
-import { useState, useEffect, useRef, useCallback, type ChangeEvent, type MouseEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useDeferredValue,
+  type ChangeEvent,
+  type MouseEvent,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import { Editor } from "../components/editor";
 import { Preview } from "../components/preview";
@@ -9,14 +18,16 @@ import { MobileSidebar } from "../components/mobile-sidebar";
 import { ShareButton } from "../components/share-button";
 import { ThemeToggle } from "../components/theme-toggle";
 import { TermButton } from "../components/term-button";
-import { useFiles, useCreateFile, useUpdateFile, useDeleteFile } from "../hooks/use-files";
+import { useFiles, useFile, useCreateFile, useUpdateFile, useDeleteFile } from "../hooks/use-files";
+import { filesApi } from "../lib/api";
 import { loadViewMode, saveViewMode, type ViewMode } from "../utils/storage";
-import type { MarkdownFile } from "@markdown-viewer/shared";
+import type { MarkdownFileMeta } from "@markdown-viewer/shared";
 
 export function MainApp() {
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Start closed on mobile so the sidebar dialog doesn't pop open on first load
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [localContent, setLocalContent] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
 
@@ -33,6 +44,7 @@ export function MainApp() {
   }, []);
 
   // API hooks
+  const queryClient = useQueryClient();
   const { data: files = [], isLoading } = useFiles();
   const createFile = useCreateFile();
   const updateFile = useUpdateFile();
@@ -41,7 +53,7 @@ export function MainApp() {
   const handleDeletedFile = useCallback(
     (deletedId: string) => {
       if (deletedId === activeFileId) {
-        const remainingFiles = files.filter((f: MarkdownFile) => f.id !== deletedId);
+        const remainingFiles = files.filter((f: MarkdownFileMeta) => f.id !== deletedId);
         setActiveFileId(remainingFiles[0]?.id || null);
       }
     },
@@ -50,8 +62,12 @@ export function MainApp() {
 
   const deleteFile = useDeleteFile(handleDeletedFile);
 
-  const activeFile = files.find((f: MarkdownFile) => f.id === activeFileId);
-  const markdown = activeFile?.content || "";
+  const activeFile = files.find((f: MarkdownFileMeta) => f.id === activeFileId);
+
+  // The file list only carries metadata; content is fetched (and cached) per file
+  const { data: activeFileData } = useFile(activeFileId);
+  const markdown = activeFileData?.content ?? "";
+  const isFileContentReady = !activeFileId || activeFileData !== undefined;
 
   // Debounce timer refs
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,10 +85,21 @@ export function MainApp() {
     saveViewMode(viewMode);
   }, [viewMode]);
 
-  // Sync local content with active file
+  // Sync local content with active file (only once its content has loaded,
+  // so a pending fetch never wipes the editor)
   useEffect(() => {
-    setLocalContent(markdown);
-  }, [activeFileId, markdown]);
+    if (!activeFileId) {
+      setLocalContent("");
+      return;
+    }
+    if (isFileContentReady) {
+      setLocalContent(markdown);
+    }
+  }, [activeFileId, markdown, isFileContentReady]);
+
+  // Keystrokes update localContent immediately; the preview renders from the
+  // deferred value so markdown parsing never blocks typing
+  const deferredContent = useDeferredValue(localContent);
 
   // Cleanup debounce timers on unmount
   useEffect(() => {
@@ -168,6 +195,18 @@ export function MainApp() {
   const handleFileSelect = useCallback((fileId: string) => {
     setActiveFileId(fileId);
   }, []);
+
+  // Prefetch file content on hover so switching files feels instant
+  const handleFileHover = useCallback(
+    (fileId: string) => {
+      queryClient.prefetchQuery({
+        queryKey: ["files", fileId],
+        queryFn: () => filesApi.getOne(fileId),
+        staleTime: 60 * 1000,
+      });
+    },
+    [queryClient],
+  );
 
   // Download current file as .md
   const [downloadDone, setDownloadDone] = useState(false);
@@ -381,6 +420,7 @@ export function MainApp() {
                   files={files}
                   activeFileId={activeFileId}
                   onFileSelect={handleFileSelect}
+                  onFileHover={handleFileHover}
                   onFileCreate={handleFileCreate}
                   onFileDelete={handleFileDelete}
                   onFileRename={handleFileRename}
@@ -409,6 +449,12 @@ export function MainApp() {
                     <TermButton onClick={handleFileCreate}>new_file</TermButton>
                   </div>
                 </div>
+              ) : !isFileContentReady ? (
+                <div className="flex items-center justify-center h-full">
+                  <span className="text-xs" style={{ color: "var(--term-text-muted)" }}>
+                    loading...
+                  </span>
+                </div>
               ) : (
                 <>
                   {viewMode === "split" && (
@@ -417,7 +463,7 @@ export function MainApp() {
                         <Editor value={localContent} onChange={handleMarkdownChange} />
                       </div>
                       <div className="h-full min-h-64 md:min-h-96">
-                        <Preview key="preview-stable" markdown={localContent} />
+                        <Preview key="preview-stable" markdown={deferredContent} />
                       </div>
                     </div>
                   )}
@@ -430,7 +476,7 @@ export function MainApp() {
 
                   {viewMode === "preview" && (
                     <div className="max-w-5xl mx-auto h-full">
-                      <Preview key="preview-stable" markdown={localContent} />
+                      <Preview key="preview-stable" markdown={deferredContent} />
                     </div>
                   )}
                 </>

@@ -1,12 +1,12 @@
 import { memo, useCallback } from "react";
 import { Dialog } from "@base-ui-components/react/dialog";
 import { FileSidebar } from "./file-sidebar";
-import type { MarkdownFile } from "@markdown-viewer/shared";
+import type { MarkdownFileMeta } from "@markdown-viewer/shared";
 
 interface MobileSidebarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  files: MarkdownFile[];
+  files: MarkdownFileMeta[];
   activeFileId: string | null;
   onFileSelect: (fileId: string) => void;
   onFileCreate: () => void;

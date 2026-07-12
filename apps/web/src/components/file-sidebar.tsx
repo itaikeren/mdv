@@ -1,11 +1,12 @@
 import React, { useState, useCallback, memo } from "react";
-import type { MarkdownFile } from "@markdown-viewer/shared";
+import type { MarkdownFileMeta } from "@markdown-viewer/shared";
 import { TermButton } from "./term-button";
 
 interface FileSidebarProps {
-  files: MarkdownFile[];
+  files: MarkdownFileMeta[];
   activeFileId: string | null;
   onFileSelect: (fileId: string) => void;
+  onFileHover?: (fileId: string) => void;
   onFileCreate: () => void;
   onFileDelete: (fileId: string) => void;
   onFileRename: (fileId: string, newName: string) => void;
@@ -16,6 +17,7 @@ export const FileSidebar = memo(function FileSidebar({
   files,
   activeFileId,
   onFileSelect,
+  onFileHover,
   onFileCreate,
   onFileDelete,
   onFileRename,
@@ -24,7 +26,7 @@ export const FileSidebar = memo(function FileSidebar({
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
 
-  const handleStartEdit = useCallback((file: MarkdownFile) => {
+  const handleStartEdit = useCallback((file: MarkdownFileMeta) => {
     setEditingFileId(file.id);
     setEditingName(file.name);
   }, []);
@@ -114,6 +116,7 @@ export const FileSidebar = memo(function FileSidebar({
               <div
                 key={file.id}
                 onClick={() => onFileSelect(file.id)}
+                onMouseEnter={() => onFileHover?.(file.id)}
                 className="group relative cursor-pointer"
               >
                 {editingFileId === file.id ? (

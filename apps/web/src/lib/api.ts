@@ -1,5 +1,6 @@
 import type {
   MarkdownFile,
+  MarkdownFileMeta,
   CreateFileInput,
   UpdateFileInput,
   CreateShareInput,
@@ -31,7 +32,7 @@ async function fetchWithAuth(url: string, options: Parameters<typeof fetch>[1] =
 
 // File API
 export const filesApi = {
-  getAll: (): Promise<MarkdownFile[]> => fetchWithAuth(`${API_BASE}/files`),
+  getAll: (): Promise<MarkdownFileMeta[]> => fetchWithAuth(`${API_BASE}/files`),
 
   getOne: (id: string): Promise<MarkdownFile> => fetchWithAuth(`${API_BASE}/files/${id}`),
 
