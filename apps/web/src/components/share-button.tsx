@@ -1,10 +1,35 @@
 import { useState, useEffect, useCallback } from "react";
 import { useCreateShare, useFileShares, useDeleteShare, useUpdateShare } from "../hooks/use-shares";
+import { useUpdateFile } from "../hooks/use-files";
+import { useMe } from "../hooks/use-profile";
 import type { Share } from "@markdown-viewer/shared";
 
 interface ShareButtonProps {
   fileId: string;
   fileName: string;
+  slug: string | null;
+  visibility: "private" | "public";
+}
+
+const MAX_SLUG_LENGTH = 32;
+
+// Cosmetic client-side mirror of apps/api/lib/slug.ts's slugify(), used only
+// to prefill the slug field. The server is authoritative and re-derives /
+// re-validates on save.
+function slugify(name: string): string {
+  let base = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (base.length > MAX_SLUG_LENGTH) {
+    base = base.slice(0, MAX_SLUG_LENGTH).replace(/-+$/g, "");
+  }
+  if (base.length < 3) {
+    base = (base || "file").padEnd(3, "0");
+  }
+  return base;
 }
 
 function ToggleSwitch({
@@ -39,15 +64,31 @@ function ToggleSwitch({
   );
 }
 
-export function ShareButton({ fileId, fileName }: ShareButtonProps) {
+export function ShareButton({ fileId, fileName, slug, visibility }: ShareButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [copiedRawToken, setCopiedRawToken] = useState<string | null>(null);
+  const [copiedPublicUrl, setCopiedPublicUrl] = useState(false);
+  const [slugInput, setSlugInput] = useState(slug ?? "");
+  const [visibilityDraft, setVisibilityDraft] = useState(visibility === "public");
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   const createShare = useCreateShare();
   const { data: shares = [], isLoading } = useFileShares(isOpen ? fileId : null);
   const deleteShare = useDeleteShare();
   const updateShare = useUpdateShare();
+  const updateFile = useUpdateFile();
+  const { data: me } = useMe(isOpen);
+
+  // Seed the publish draft from the file's current state whenever the modal
+  // opens (or the underlying file changes, e.g. right after a successful save)
+  useEffect(() => {
+    if (isOpen) {
+      setSlugInput(slug ?? "");
+      setVisibilityDraft(visibility === "public");
+      setPublishError(null);
+    }
+  }, [isOpen, slug, visibility]);
 
   const handleCreateShare = () => {
     createShare.mutate({ fileId, commentsEnabled: false, allowAnonymousComments: false });
@@ -83,6 +124,39 @@ export function ShareButton({ fileId, fileName }: ShareButtonProps) {
     if (confirm("Delete this share link?")) {
       deleteShare.mutate(shareId);
     }
+  };
+
+  const handleToggleVisibility = () => {
+    const next = !visibilityDraft;
+    setVisibilityDraft(next);
+    if (next && !slugInput.trim()) {
+      setSlugInput(slugify(fileName));
+    }
+  };
+
+  const handleSavePublish = () => {
+    setPublishError(null);
+    const trimmedSlug = slugInput.trim();
+    updateFile.mutate(
+      {
+        id: fileId,
+        data: {
+          visibility: visibilityDraft ? "public" : "private",
+          ...(visibilityDraft && trimmedSlug ? { slug: trimmedSlug } : {}),
+        },
+      },
+      {
+        onError: (err) => {
+          setPublishError(err instanceof Error ? err.message : "Failed to update visibility");
+        },
+      },
+    );
+  };
+
+  const handleCopyPublicUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedPublicUrl(true);
+    setTimeout(() => setCopiedPublicUrl(false), 2000);
   };
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -439,6 +513,134 @@ export function ShareButton({ fileId, fileName }: ShareButtonProps) {
                       );
                     })}
                   </>
+                )}
+              </div>
+
+              {/* Publish publicly */}
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--term-border)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3
+                      className="text-[10px] font-medium"
+                      style={{ color: "var(--term-text-muted)" }}
+                    >
+                      publish publicly
+                    </h3>
+                    <p className="text-[10px] mt-0.5" style={{ color: "var(--term-text-muted)" }}>
+                      list this file on your public profile
+                    </p>
+                  </div>
+                  <ToggleSwitch
+                    checked={visibilityDraft}
+                    onChange={handleToggleVisibility}
+                    disabled={updateFile.isPending || !me?.username}
+                  />
+                </div>
+
+                {!me?.username ? (
+                  <p className="text-[10px]" style={{ color: "var(--term-text-muted)" }}>
+                    // claim a username (profile icon in the header) to publish files publicly
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-[10px] flex-shrink-0 font-mono"
+                        style={{ color: "var(--term-text-muted)" }}
+                      >
+                        /u/{me.username}/
+                      </span>
+                      <input
+                        type="text"
+                        value={slugInput}
+                        onChange={(e) => {
+                          setSlugInput(e.target.value);
+                          setPublishError(null);
+                        }}
+                        placeholder="auto from file name"
+                        maxLength={MAX_SLUG_LENGTH}
+                        disabled={!visibilityDraft}
+                        className="flex-1 min-w-0 px-2.5 py-1.5 text-[10px] border outline-none font-mono disabled:opacity-40"
+                        style={{
+                          backgroundColor: "var(--term-bg-surface)",
+                          borderColor: "var(--term-border)",
+                          color: "var(--term-text)",
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = "var(--term-border-focus)";
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = "var(--term-border)";
+                        }}
+                      />
+                      <button
+                        onClick={handleSavePublish}
+                        disabled={updateFile.isPending}
+                        className="px-2.5 py-1.5 text-[10px] transition-colors cursor-pointer border border-dashed flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{
+                          borderColor: "var(--term-border)",
+                          color: "var(--term-text)",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!e.currentTarget.disabled) {
+                            e.currentTarget.style.borderColor = "var(--term-green)";
+                            e.currentTarget.style.color = "var(--term-green)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = "var(--term-border)";
+                          e.currentTarget.style.color = "var(--term-text)";
+                        }}
+                      >
+                        {updateFile.isPending ? "saving..." : "save"}
+                      </button>
+                    </div>
+
+                    {publishError && (
+                      <p className="text-[10px]" style={{ color: "var(--term-red)" }}>
+                        {publishError}
+                      </p>
+                    )}
+
+                    {visibilityDraft && (slugInput.trim() || slug) && (
+                      <div className="flex items-center gap-2">
+                        <p
+                          className="flex-1 min-w-0 text-[10px] font-mono truncate"
+                          style={{ color: "var(--term-text)" }}
+                        >
+                          {`${window.location.origin}/u/${me.username}/${slugInput.trim() || slug}`}
+                        </p>
+                        <button
+                          onClick={() =>
+                            handleCopyPublicUrl(
+                              `${window.location.origin}/u/${me.username}/${slugInput.trim() || slug}`,
+                            )
+                          }
+                          className="flex items-center gap-1 px-2 py-1 text-[10px] transition-colors flex-shrink-0 cursor-pointer border"
+                          title="Copy public URL"
+                          style={{
+                            color: copiedPublicUrl ? "var(--term-green)" : "var(--term-text)",
+                            borderColor: copiedPublicUrl
+                              ? "var(--term-green)"
+                              : "var(--term-border)",
+                            backgroundColor: "var(--term-bg-raised)",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!copiedPublicUrl) {
+                              e.currentTarget.style.borderColor = "var(--term-text)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!copiedPublicUrl) {
+                              e.currentTarget.style.borderColor = "var(--term-border)";
+                            }
+                          }}
+                        >
+                          {copiedPublicUrl ? "copied" : "copy"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

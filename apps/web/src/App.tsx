@@ -5,6 +5,12 @@ import { Routes, Route } from "react-router-dom";
 // editor app, and editor users never download the share view
 const MainApp = lazy(() => import("./pages/main-app").then((m) => ({ default: m.MainApp })));
 const ShareView = lazy(() => import("./pages/share-view").then((m) => ({ default: m.ShareView })));
+const ProfileView = lazy(() =>
+  import("./pages/profile-view").then((m) => ({ default: m.ProfileView })),
+);
+const PublicFileView = lazy(() =>
+  import("./pages/public-file-view").then((m) => ({ default: m.PublicFileView })),
+);
 
 function RouteFallback() {
   return (
@@ -25,6 +31,8 @@ function App() {
       <Routes>
         <Route path="/" element={<MainApp />} />
         <Route path="/share/:token" element={<ShareView />} />
+        <Route path="/u/:username" element={<ProfileView />} />
+        <Route path="/u/:username/:slug" element={<PublicFileView />} />
       </Routes>
     </Suspense>
   );

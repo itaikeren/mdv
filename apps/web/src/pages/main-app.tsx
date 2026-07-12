@@ -17,6 +17,7 @@ import { FileSidebar } from "../components/file-sidebar";
 import { MobileSidebar } from "../components/mobile-sidebar";
 import { ShareButton } from "../components/share-button";
 import { ApiKeysModal } from "../components/api-keys-modal";
+import { UsernameModal } from "../components/username-modal";
 import { ThemeToggle } from "../components/theme-toggle";
 import { TermButton } from "../components/term-button";
 import { useFiles, useFile, useCreateFile, useUpdateFile, useDeleteFile } from "../hooks/use-files";
@@ -411,7 +412,14 @@ export function MainApp() {
                   )}
                 </button>
               )}
-              {activeFile && <ShareButton fileId={activeFile.id} fileName={activeFile.name} />}
+              {activeFile && (
+                <ShareButton
+                  fileId={activeFile.id}
+                  fileName={activeFile.name}
+                  slug={activeFile.slug}
+                  visibility={activeFile.visibility}
+                />
+              )}
               {activeFile && (
                 <button
                   onClick={handleDownload}
@@ -447,6 +455,7 @@ export function MainApp() {
                 </button>
               )}
               <ApiKeysModal />
+              <UsernameModal />
               <ThemeToggle />
               <UserButton />
             </div>

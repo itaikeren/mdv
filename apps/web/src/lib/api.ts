@@ -11,6 +11,9 @@ import type {
   ApiKey,
   CreateApiKeyInput,
   CreateApiKeyResponse,
+  User,
+  PublicProfile,
+  PublicFile,
 } from "@markdown-viewer/shared";
 
 const API_BASE = "/api";
@@ -73,6 +76,7 @@ export const sharesApi = {
     commentsEnabled: boolean;
     allowAnonymousComments: boolean;
     viewCount: number;
+    authorUsername: string | null;
   }> => {
     const res = await fetch(`${API_BASE}/shares/${token}`);
     if (!res.ok) {
@@ -137,4 +141,36 @@ export const apiKeysApi = {
     fetchWithAuth(`${API_BASE}/keys/${id}`, {
       method: "DELETE",
     }),
+};
+
+// Users API (own profile - Clerk session or API key)
+export const usersApi = {
+  getMe: (): Promise<User> => fetchWithAuth(`${API_BASE}/users/me`),
+
+  updateUsername: (username: string): Promise<User> =>
+    fetchWithAuth(`${API_BASE}/users/me`, {
+      method: "PATCH",
+      body: JSON.stringify({ username }),
+    }),
+};
+
+// Public API (no auth - profile pages and public files)
+export const publicApi = {
+  getProfile: async (username: string): Promise<PublicProfile> => {
+    const res = await fetch(`${API_BASE}/u/${username}`);
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: "Request failed" }));
+      throw new Error(error.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+  getFile: async (username: string, slug: string): Promise<PublicFile> => {
+    const res = await fetch(`${API_BASE}/u/${username}/${slug}`);
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: "Request failed" }));
+      throw new Error(error.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
 };

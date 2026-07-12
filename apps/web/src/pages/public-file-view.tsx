@@ -1,46 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
-import { useShareByToken } from "../hooks/use-shares";
-import { useComments } from "../hooks/use-comments";
+import { usePublicFile } from "../hooks/use-public-file";
 import { Preview } from "../components/preview";
-import { CommentsSection } from "../components/comments-section";
-import type { CommentAnchor } from "../components/comments-section";
-import { BlockCommentMarkers } from "../components/block-comment-markers";
 import { ThemeToggle } from "../components/theme-toggle";
 
-export function ShareView() {
-  const { token } = useParams<{ token: string }>();
-  const { data, isLoading, error } = useShareByToken(token!);
-  const { isSignedIn } = useAuth();
-  const [pendingAnchor, setPendingAnchor] = useState<CommentAnchor | null>(null);
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
-  const previewWrapRef = useRef<HTMLDivElement>(null);
-
-  const shareId = data?.shareId ?? "";
-  // Fetched unconditionally (matching CommentsSection) so margin markers appear
-  // for existing anchored comments even when commenting is now closed; the
-  // shared React Query key dedupes this into a single request.
-  const { data: comments = [] } = useComments(shareId, true);
-
-  // The block hover affordance is pointer-only; hide it below lg where the
-  // left-margin positioning is cramped (comments still work via the compose box).
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const update = () => setIsLargeScreen(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
-  const handleCommentOnBlock = useCallback((startLine: number, endLine: number) => {
-    setPendingAnchor({ startLine, endLine });
-    requestAnimationFrame(() => {
-      document
-        .getElementById("mdv-compose")
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  }, []);
+export function PublicFileView() {
+  const { username, slug } = useParams<{ username: string; slug: string }>();
+  const { data, isLoading, error } = usePublicFile(username, slug);
 
   if (isLoading) {
     return (
@@ -75,10 +40,10 @@ export function ShareView() {
             ! err
           </div>
           <h1 className="text-sm font-medium mb-2" style={{ color: "var(--term-text-bright)" }}>
-            share not found
+            file not found
           </h1>
           <p className="text-xs mb-6" style={{ color: "var(--term-text-muted)" }}>
-            // this share link may have expired or been deleted
+            // this file may be private, unpublished, or never existed
           </p>
           <Link
             to="/"
@@ -101,9 +66,7 @@ export function ShareView() {
     );
   }
 
-  const { file, viewCount, commentsEnabled, allowAnonymousComments, authorUsername } = data;
-  const canCompose = commentsEnabled && (isSignedIn || allowAnonymousComments);
-  const showAffordance = canCompose && isLargeScreen;
+  const { name, content, updatedAt, authorUsername } = data;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--term-bg)" }}>
@@ -142,48 +105,27 @@ export function ShareView() {
                   className="text-xs md:text-sm font-medium truncate"
                   style={{ color: "var(--term-text-bright)" }}
                 >
-                  {file.name}
+                  {name}
                 </h1>
                 <p className="text-[10px] truncate" style={{ color: "var(--term-text-muted)" }}>
-                  {viewCount} views
-                  {authorUsername && (
-                    <>
-                      {" "}
-                      &middot;{" "}
-                      <Link
-                        to={`/u/${authorUsername}`}
-                        className="transition-colors"
-                        style={{ color: "var(--term-text-muted)" }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = "var(--term-text-bright)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "var(--term-text-muted)";
-                        }}
-                      >
-                        by @{authorUsername}
-                      </Link>
-                    </>
-                  )}
+                  updated {new Date(updatedAt).toLocaleDateString()} &middot;{" "}
+                  <Link
+                    to={`/u/${authorUsername}`}
+                    className="transition-colors"
+                    style={{ color: "var(--term-text-muted)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "var(--term-text-bright)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--term-text-muted)";
+                    }}
+                  >
+                    by @{authorUsername}
+                  </Link>
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
-              <a
-                href={`/raw/${token}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] md:text-xs transition-colors whitespace-nowrap"
-                style={{ color: "var(--term-text-muted)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--term-text-bright)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--term-text-muted)";
-                }}
-              >
-                raw
-              </a>
               <Link
                 to="/"
                 className="px-2 py-1 md:px-3 text-[10px] md:text-xs font-medium transition-colors whitespace-nowrap"
@@ -206,27 +148,9 @@ export function ShareView() {
         </div>
       </header>
 
-      {/* Content */}
+      {/* Content - no comments on public profile pages (share-link feature only) */}
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <div ref={previewWrapRef} style={{ position: "relative" }}>
-          <Preview
-            markdown={file.content}
-            onCommentOnBlock={showAffordance ? handleCommentOnBlock : undefined}
-          />
-          <BlockCommentMarkers
-            wrapRef={previewWrapRef}
-            comments={comments}
-            contentKey={file.content}
-          />
-        </div>
-        <CommentsSection
-          shareId={shareId}
-          fileOwnerId={file.userId}
-          commentsEnabled={commentsEnabled}
-          allowAnonymousComments={allowAnonymousComments}
-          pendingAnchor={pendingAnchor}
-          onClearAnchor={() => setPendingAnchor(null)}
-        />
+        <Preview markdown={content} />
       </main>
 
       {/* Footer */}
