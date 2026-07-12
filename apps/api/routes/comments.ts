@@ -10,10 +10,49 @@ import type { CreateCommentInput, PublicComment } from "@markdown-viewer/shared"
 
 const MAX_AUTHOR_NAME_LENGTH = 50;
 
+// Names anonymous commenters may not pick (case-insensitive), whole-word or
+// de-spaced ("ad min" -> "admin"). Deters casual impersonation, not
+// determined abuse — consistent with the rest of the anti-abuse posture here.
+const RESERVED_AUTHOR_WORDS = [
+  "admin",
+  "administrator",
+  "moderator",
+  "mod",
+  "owner",
+  "staff",
+  "support",
+  "system",
+  "official",
+  "bot",
+  "anthropic",
+  "claude",
+];
+
 const app = new Hono();
 
 function isShareExpired(share: { expiresAt: Date | null }): boolean {
   return share.expiresAt !== null && new Date(share.expiresAt) < new Date();
+}
+
+// Trim + collapse internal whitespace runs to a single space.
+function normalizeAuthorName(name: string): string {
+  return name.trim().replace(/\s+/g, " ");
+}
+
+// `collapsed` must already be normalized (normalizeAuthorName). Checks, in
+// order: email impersonation, whole-word reserved match, de-spaced reserved
+// match (substrings like "admiral" must NOT match), file-owner username
+// impersonation, and punctuation-only names.
+function isDisallowedAuthorName(collapsed: string, ownerUsername: string | null): boolean {
+  const lower = collapsed.toLowerCase();
+
+  if (collapsed.includes("@")) return true;
+  if (lower.split(" ").some((token) => RESERVED_AUTHOR_WORDS.includes(token))) return true;
+  if (RESERVED_AUTHOR_WORDS.includes(lower.replace(/\s+/g, ""))) return true;
+  if (ownerUsername !== null && lower === ownerUsername.toLowerCase()) return true;
+  if (!/[a-z0-9]/i.test(collapsed)) return true;
+
+  return false;
 }
 
 // Get all comments for a share (public - always returns comments for read-only
@@ -223,7 +262,8 @@ app.post("/", async (c) => {
 
       userId = auth.userId;
     } else {
-      // Anonymous: require a non-empty author name
+      // Anonymous: require a non-empty author name that isn't a misleading
+      // identity (reserved word, email, or an impersonation of the file owner).
       const trimmedName = body.authorName?.trim() ?? "";
       if (trimmedName.length === 0) {
         return c.json({ error: "Name is required for anonymous comments" }, 400);
@@ -231,7 +271,17 @@ app.post("/", async (c) => {
       if (trimmedName.length > MAX_AUTHOR_NAME_LENGTH) {
         return c.json({ error: `Name must be ${MAX_AUTHOR_NAME_LENGTH} characters or less` }, 400);
       }
-      authorName = trimmedName;
+
+      const collapsed = normalizeAuthorName(trimmedName);
+      const owner = await db.query.users.findFirst({
+        where: eq(users.id, share.file.userId),
+        columns: { username: true },
+      });
+      if (isDisallowedAuthorName(collapsed, owner?.username ?? null)) {
+        return c.json({ error: "Please pick a different name" }, 400);
+      }
+
+      authorName = collapsed;
     }
 
     const [newComment] = await db

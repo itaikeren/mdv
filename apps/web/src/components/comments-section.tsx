@@ -239,6 +239,20 @@ function CommentItem({
         >
           {comment.userEmail}
         </span>
+        {comment.isAnonymous && (
+          <span
+            style={{
+              fontSize: 9,
+              lineHeight: 1.5,
+              padding: "0.05rem 0.35rem",
+              color: "var(--term-text-muted)",
+              border: "1px solid var(--term-border)",
+              opacity: 0.7,
+            }}
+          >
+            guest
+          </span>
+        )}
         <span style={{ fontSize: 10, color: "var(--term-text-muted)", opacity: 0.7 }}>
           {formatRelativeTime(comment.createdAt)}
         </span>
