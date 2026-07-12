@@ -61,36 +61,54 @@ app.get("/:token", async (c) => {
   const { token } = c.req.param();
 
   try {
-    const share = await db.query.shares.findFirst({
-      where: eq(shares.shareToken, token),
-      with: {
-        file: true,
-      },
-    });
+    // Fetch share + file and increment the view count in a single round trip
+    const result = await db.execute(sql`
+      UPDATE shares
+      SET view_count = shares.view_count + 1
+      FROM files
+      WHERE shares.share_token = ${token}
+        AND files.id = shares.file_id
+        AND (shares.expires_at IS NULL OR shares.expires_at > now())
+      RETURNING
+        shares.id AS share_id,
+        shares.comments_enabled,
+        shares.allow_anonymous_comments,
+        shares.view_count,
+        files.id AS file_id,
+        files.user_id,
+        files.name,
+        files.content,
+        files.created_at,
+        files.updated_at
+    `);
 
-    if (!share) {
+    const row = result.rows[0];
+
+    if (!row) {
+      // Distinguish missing from expired (rare path, so the extra query is fine)
+      const share = await db.query.shares.findFirst({
+        where: eq(shares.shareToken, token),
+        columns: { id: true },
+      });
+      if (share) {
+        return c.json({ error: "Share has expired" }, 410);
+      }
       return c.json({ error: "Share not found" }, 404);
     }
 
-    // Check if share has expired
-    if (share.expiresAt && new Date(share.expiresAt) < new Date()) {
-      return c.json({ error: "Share has expired" }, 410);
-    }
-
-    // Increment view count
-    await db
-      .update(shares)
-      .set({
-        viewCount: sql`${shares.viewCount} + 1`,
-      })
-      .where(eq(shares.shareToken, token));
-
     return c.json({
-      file: share.file,
-      shareId: share.id,
-      commentsEnabled: share.commentsEnabled,
-      allowAnonymousComments: share.allowAnonymousComments,
-      viewCount: share.viewCount + 1,
+      file: {
+        id: row.file_id,
+        userId: row.user_id,
+        name: row.name,
+        content: row.content,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      },
+      shareId: row.share_id,
+      commentsEnabled: row.comments_enabled,
+      allowAnonymousComments: row.allow_anonymous_comments,
+      viewCount: row.view_count,
     });
   } catch (error) {
     console.error("Error fetching share:", error);

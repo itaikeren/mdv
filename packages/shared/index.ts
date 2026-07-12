@@ -1,10 +1,14 @@
-export interface MarkdownFile {
+// File metadata without content - used for file lists to keep payloads small
+export interface MarkdownFileMeta {
   id: string
   userId: string
   name: string
-  content: string
   createdAt: Date
   updatedAt: Date
+}
+
+export interface MarkdownFile extends MarkdownFileMeta {
+  content: string
 }
 
 export interface Share {

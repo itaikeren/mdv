@@ -7,14 +7,20 @@ import type { CreateFileInput, UpdateFileInput } from "@markdown-viewer/shared";
 
 const app = new Hono();
 
-// Get all files for the authenticated user
+// Get all files for the authenticated user (metadata only - content is fetched per file)
 app.get("/", async (c) => {
   const { error, auth } = await requireAuth(c);
   if (error) return error;
 
   try {
     const userFiles = await db
-      .select()
+      .select({
+        id: files.id,
+        userId: files.userId,
+        name: files.name,
+        createdAt: files.createdAt,
+        updatedAt: files.updatedAt,
+      })
       .from(files)
       .where(eq(files.userId, auth.userId))
       .orderBy(desc(files.createdAt));
@@ -93,24 +99,20 @@ app.put("/:id", async (c) => {
   try {
     const body = await c.req.json<UpdateFileInput>();
 
-    // Verify ownership
-    const existingFile = await db.query.files.findFirst({
-      where: and(eq(files.id, id), eq(files.userId, auth.userId)),
-    });
-
-    if (!existingFile) {
-      return c.json({ error: "File not found" }, 404);
-    }
-
-    // Update the file
+    // Update with ownership check in a single query; only allow known fields
     const [updatedFile] = await db
       .update(files)
       .set({
-        ...body,
+        ...(body.name !== undefined ? { name: body.name } : {}),
+        ...(body.content !== undefined ? { content: body.content } : {}),
         updatedAt: new Date(),
       })
-      .where(eq(files.id, id))
+      .where(and(eq(files.id, id), eq(files.userId, auth.userId)))
       .returning();
+
+    if (!updatedFile) {
+      return c.json({ error: "File not found" }, 404);
+    }
 
     return c.json(updatedFile);
   } catch (error) {
@@ -127,17 +129,15 @@ app.delete("/:id", async (c) => {
   const { id } = c.req.param();
 
   try {
-    // Verify ownership
-    const existingFile = await db.query.files.findFirst({
-      where: and(eq(files.id, id), eq(files.userId, auth.userId)),
-    });
+    // Delete with ownership check in a single query (shares will be cascade deleted)
+    const [deletedFile] = await db
+      .delete(files)
+      .where(and(eq(files.id, id), eq(files.userId, auth.userId)))
+      .returning({ id: files.id });
 
-    if (!existingFile) {
+    if (!deletedFile) {
       return c.json({ error: "File not found" }, 404);
     }
-
-    // Delete the file (shares will be cascade deleted)
-    await db.delete(files).where(eq(files.id, id));
 
     return c.json({ success: true });
   } catch (error) {

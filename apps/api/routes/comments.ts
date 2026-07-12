@@ -22,7 +22,11 @@ app.get("/:shareId", async (c) => {
       return c.json({ error: "Share not found" }, 404);
     }
 
-    const shareComments = await db.select().from(comments).where(eq(comments.shareId, shareId));
+    const shareComments = await db
+      .select()
+      .from(comments)
+      .where(eq(comments.shareId, shareId))
+      .orderBy(comments.createdAt);
 
     return c.json(shareComments);
   } catch (error) {
