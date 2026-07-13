@@ -18,8 +18,8 @@ import { MobileSidebar } from "../components/mobile-sidebar";
 import { ShareButton } from "../components/share-button";
 import { ApiKeysModal } from "../components/api-keys-modal";
 import { UsernameModal } from "../components/username-modal";
-import { ThemeToggle } from "../components/theme-toggle";
 import { TermButton } from "../components/term-button";
+import { useTheme } from "../hooks/use-theme";
 import { useFiles, useFile, useCreateFile, useUpdateFile, useDeleteFile } from "../hooks/use-files";
 import { useSyncScroll } from "../hooks/use-sync-scroll";
 import { filesApi } from "../lib/api";
@@ -32,6 +32,24 @@ import {
 } from "../utils/storage";
 import type { MarkdownFileMeta } from "@markdown-viewer/shared";
 
+// 16px stroke icon for the Clerk user-menu items.
+function MenuIcon({ d }: { d: string }) {
+  return (
+    <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
+    </svg>
+  );
+}
+
+const ICON_PROFILE =
+  "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.12a7.5 7.5 0 0115 0A17.9 17.9 0 0112 21.75c-2.68 0-5.22-.58-7.5-1.63z";
+const ICON_KEY =
+  "M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.03 5.91c-.56-.1-1.16.03-1.56.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.82c0-.6.24-1.17.66-1.59l6.5-6.5c.4-.4.53-1 .43-1.56A6 6 0 1121.75 8.25z";
+const ICON_SUN =
+  "M12 3v2.25m6.36.39l-1.59 1.59M21 12h-2.25m-.39 6.36l-1.59-1.59M12 18.75V21m-4.77-4.23l-1.59 1.59M5.25 12H3m4.23-4.77L5.64 5.64M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z";
+const ICON_MOON =
+  "M21.75 15A9.72 9.72 0 0118 15.75c-5.39 0-9.75-4.37-9.75-9.75 0-1.33.27-2.6.75-3.75A9.75 9.75 0 003 11.25C3 16.64 7.37 21 12.75 21a9.75 9.75 0 009-6z";
+
 export function MainApp() {
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(() => loadViewMode());
@@ -40,6 +58,10 @@ export function MainApp() {
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [localContent, setLocalContent] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
+  // Account actions live in the user menu; the modals are opened from there.
+  const [apiKeysOpen, setApiKeysOpen] = useState(false);
+  const [usernameOpen, setUsernameOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   // Detect if we're on mobile/tablet
   useEffect(() => {
@@ -397,12 +419,31 @@ export function MainApp() {
                 className="hidden md:block w-px h-4 self-center"
                 style={{ backgroundColor: "var(--term-border)" }}
               />
-              <ApiKeysModal />
-              <UsernameModal />
-              <ThemeToggle />
-              <UserButton />
+              <UserButton afterSignOutUrl="/">
+                <UserButton.MenuItems>
+                  <UserButton.Action
+                    label="Public profile"
+                    labelIcon={<MenuIcon d={ICON_PROFILE} />}
+                    onClick={() => setUsernameOpen(true)}
+                  />
+                  <UserButton.Action
+                    label="API keys"
+                    labelIcon={<MenuIcon d={ICON_KEY} />}
+                    onClick={() => setApiKeysOpen(true)}
+                  />
+                  <UserButton.Action
+                    label={theme === "dark" ? "Light mode" : "Dark mode"}
+                    labelIcon={<MenuIcon d={theme === "dark" ? ICON_SUN : ICON_MOON} />}
+                    onClick={toggleTheme}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
             </div>
           </header>
+
+          {/* Account modals — opened from the user menu (see UserButton above) */}
+          <ApiKeysModal open={apiKeysOpen} onOpenChange={setApiKeysOpen} />
+          <UsernameModal open={usernameOpen} onOpenChange={setUsernameOpen} />
 
           {/* Mobile Sidebar (Dialog) - Only on mobile/tablet */}
           {isMobile && (

@@ -349,15 +349,19 @@ export const Preview = memo(function Preview({
   return (
     <div
       ref={setContainerRef}
-      className="h-full overflow-y-auto p-4"
+      className="h-full overflow-y-auto p-5 md:p-7"
       style={{
         backgroundColor: "var(--term-bg-raised)",
         border: "1px solid var(--term-border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-sm)",
         position: onCommentOnBlock ? "relative" : undefined,
       }}
     >
       {markdown ? (
-        <div className="prose prose-sm prose-invert max-w-none">
+        // Full-width box, but the reading column is capped and centered so long
+        // lines stay in a comfortable measure (like the typography plugin default).
+        <div className="prose prose-sm prose-invert mx-auto max-w-[70ch]">
           <ReactMarkdown
             remarkPlugins={MARKDOWN_PLUGINS}
             rehypePlugins={REHYPE_PLUGINS}

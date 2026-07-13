@@ -4,8 +4,8 @@ import { ThemeContext, type Theme } from "../contexts/theme-context";
 const STORAGE_KEY = "markdown-viewer-theme";
 
 const THEME_COLORS: Record<Theme, string> = {
-  dark: "#151b23",
-  light: "#f6f8fa",
+  dark: "#131614",
+  light: "#f7f9f8",
 };
 
 function getInitialTheme(): Theme {

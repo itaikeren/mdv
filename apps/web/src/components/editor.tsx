@@ -164,10 +164,12 @@ export const Editor = memo(function Editor({
 
   return (
     <div
-      className="h-full flex flex-col transition-colors"
+      className="h-full flex flex-col transition-colors overflow-hidden"
       style={{
         backgroundColor: "var(--term-bg-raised)",
         border: "1px solid var(--term-border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-sm)",
       }}
       onFocusCapture={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = "var(--term-border-focus)";
@@ -182,7 +184,7 @@ export const Editor = memo(function Editor({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="w-full flex-1 min-h-96 resize-none outline-none text-xs leading-relaxed p-4"
+        className="font-mono w-full max-w-[76ch] mx-auto flex-1 min-h-96 resize-none outline-none text-[13px] leading-[1.7] p-4"
         style={{
           backgroundColor: "transparent",
           color: "var(--term-text-bright)",
@@ -190,7 +192,7 @@ export const Editor = memo(function Editor({
         }}
       />
       <div
-        className="text-[10px] px-3 py-1 flex items-center"
+        className="font-mono text-[10px] px-3.5 py-1.5 flex items-center"
         style={{
           color: "var(--term-text-muted)",
           borderTop: "1px solid var(--term-border)",

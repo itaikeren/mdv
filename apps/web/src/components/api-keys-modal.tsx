@@ -78,8 +78,24 @@ function formatDate(value: Date | string): string {
   return new Date(value).toLocaleDateString();
 }
 
-export function ApiKeysModal() {
-  const [isOpen, setIsOpen] = useState(false);
+interface ApiKeysModalProps {
+  // When provided, the modal is controlled from outside (e.g. the user menu)
+  // and renders no trigger of its own.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function ApiKeysModal({ open, onOpenChange }: ApiKeysModalProps = {}) {
+  const controlled = onOpenChange !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = controlled ? !!open : internalOpen;
+  const setIsOpen = useCallback(
+    (v: boolean) => {
+      if (controlled) onOpenChange!(v);
+      else setInternalOpen(v);
+    },
+    [controlled, onOpenChange],
+  );
   const [newKeyName, setNewKeyName] = useState("");
   const [newKeyScope, setNewKeyScope] = useState<ApiKeyScope>("docs");
   const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(null);
@@ -135,27 +151,29 @@ export function ApiKeysModal() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="p-1.5 transition-colors cursor-pointer"
-        title="API keys"
-        style={{ color: "var(--term-text)" }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--term-text-bright)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--term-text)";
-        }}
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
-          />
-        </svg>
-      </button>
+      {!controlled && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-1.5 transition-colors cursor-pointer"
+          title="API keys"
+          style={{ color: "var(--term-text)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--term-text-bright)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--term-text)";
+          }}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+            />
+          </svg>
+        </button>
+      )}
 
       {!isOpen ? null : (
         <>

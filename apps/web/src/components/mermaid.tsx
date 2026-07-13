@@ -7,8 +7,7 @@ interface MermaidProps {
   id?: string;
 }
 
-const FONT_FAMILY =
-  "JetBrains Mono, 0xProto, SF Mono, Monaco, Cascadia Code, Consolas, Courier New, monospace";
+const FONT_FAMILY = "Geist Mono, SF Mono, Monaco, Cascadia Code, Consolas, Courier New, monospace";
 
 export const Mermaid = memo(function Mermaid({ chart, id }: MermaidProps) {
   const { theme } = useTheme();

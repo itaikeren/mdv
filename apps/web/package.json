@@ -14,6 +14,7 @@
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.4",
     "@clerk/clerk-react": "^5.50.0",
+    "@clerk/themes": "^2.4.57",
     "@markdown-viewer/shared": "workspace:*",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.90.2",
@@ -28,12 +29,12 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.12",
     "@types/react": "^19.1.12",
-    "react-scan": "^0.4.3",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "oxfmt": "^0.28.0",
     "oxlint": "^1.43.0",
+    "react-scan": "^0.4.3",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2",
     "vite": "npm:rolldown-vite@^7.3.1"

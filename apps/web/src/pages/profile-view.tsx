@@ -80,31 +80,20 @@ export function ProfileView() {
         <div className="max-w-5xl mx-auto px-3 py-2 md:px-4 md:py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 md:gap-3 min-w-0">
-              <Link
-                to="/"
-                className="text-xs transition-colors flex-shrink-0"
-                style={{ color: "var(--term-text-muted)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--term-text-bright)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--term-text-muted)";
-                }}
-              >
-                <span className="text-xs font-medium" style={{ color: "var(--term-green)" }}>
+              <Link to="/" className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-xs" style={{ color: "var(--term-green)" }}>
                   ~
-                </span>{" "}
-                mdv
+                </span>
+                <span className="font-pixel text-sm" style={{ color: "var(--term-text-bright)" }}>
+                  mdv
+                </span>
               </Link>
               <span className="flex-shrink-0" style={{ color: "var(--term-border)" }}>
                 /
               </span>
-              <h1
-                className="text-xs md:text-sm font-medium truncate"
-                style={{ color: "var(--term-text-bright)" }}
-              >
+              <span className="text-xs md:text-sm truncate" style={{ color: "var(--term-text-muted)" }}>
                 @{resolvedUsername}
-              </h1>
+              </span>
             </div>
             <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
               <Link
@@ -130,46 +119,83 @@ export function ProfileView() {
       </header>
 
       {/* Content */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <p className="text-xs mb-4" style={{ color: "var(--term-text-muted)" }}>
-          // {files.length} public {files.length === 1 ? "file" : "files"}
-        </p>
+      <main className="max-w-3xl mx-auto px-4 py-12 md:py-16">
+        {/* Profile hero */}
+        <div className="mb-10">
+          <p className="text-xs mb-3" style={{ color: "var(--term-text-muted)" }}>
+            <span style={{ color: "var(--term-green)" }}>//</span> public profile
+          </p>
+          <h1
+            className="mb-2"
+            style={{
+              color: "var(--term-text-bright)",
+              fontSize: "clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem)",
+              fontWeight: 680,
+              letterSpacing: "-0.03em",
+            }}
+          >
+            @{resolvedUsername}
+          </h1>
+          <p className="text-xs" style={{ color: "var(--term-text-muted)" }}>
+            {files.length} public {files.length === 1 ? "document" : "documents"}
+          </p>
+        </div>
 
         {files.length === 0 ? (
-          <div className="text-center py-12 text-xs" style={{ color: "var(--term-text-muted)" }}>
-            // no public files yet
+          <div
+            className="py-16 text-center"
+            style={{ border: "1px solid var(--term-border)", backgroundColor: "var(--term-bg-raised)" }}
+          >
+            <p className="text-sm mb-1" style={{ color: "var(--term-text-bright)" }}>
+              nothing published yet
+            </p>
+            <p className="text-xs" style={{ color: "var(--term-text-muted)" }}>
+              // @{resolvedUsername} hasn&apos;t made any documents public
+            </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {files.map((file) => (
-              <Link
-                key={file.id}
-                to={`/u/${resolvedUsername}/${file.slug}`}
-                className="block p-3 border transition-colors"
-                style={{
-                  backgroundColor: "var(--term-bg-raised)",
-                  borderColor: "var(--term-border)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--term-text)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--term-border)";
-                }}
-              >
-                <p className="text-xs font-medium" style={{ color: "var(--term-text-bright)" }}>
-                  {file.name}
-                </p>
-                <p
-                  className="text-[10px] font-mono mt-1"
-                  style={{ color: "var(--term-text-muted)" }}
+          <ul style={{ border: "1px solid var(--term-border)" }}>
+            {files.map((file, i) => (
+              <li key={file.id}>
+                <Link
+                  to={`/u/${resolvedUsername}/${file.slug}`}
+                  className="group flex items-center gap-4 px-4 py-3.5 transition-colors"
+                  style={{
+                    backgroundColor: "var(--term-bg-raised)",
+                    borderTop: i === 0 ? "none" : "1px solid var(--term-border)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--term-bg-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--term-bg-raised)";
+                  }}
                 >
-                  /u/{resolvedUsername}/{file.slug} &middot; updated{" "}
-                  {new Date(file.updatedAt).toLocaleDateString()}
-                </p>
-              </Link>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="font-sans text-sm font-medium truncate"
+                      style={{ color: "var(--term-text-bright)" }}
+                    >
+                      {file.name}
+                    </p>
+                    <p className="text-[10px] mt-1 truncate" style={{ color: "var(--term-text-muted)" }}>
+                      <span style={{ color: "var(--term-green)" }}>
+                        /u/{resolvedUsername}/{file.slug}
+                      </span>{" "}
+                      &middot; updated {new Date(file.updatedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span
+                    className="flex-shrink-0 transition-transform group-hover:translate-x-0.5"
+                    style={{ color: "var(--term-text-muted)" }}
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </main>
 

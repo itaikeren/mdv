@@ -24,23 +24,33 @@ export const ModeToggle = memo(function ModeToggle({
       onValueChange={(value) => {
         if (value.length > 0) onViewModeChange(value[0] as ViewMode);
       }}
-      className="flex items-center"
+      className="flex items-center gap-0.5 p-0.5"
+      style={{
+        backgroundColor: "var(--term-bg-surface)",
+        borderRadius: "var(--radius)",
+        border: "1px solid var(--term-border)",
+      }}
     >
-      {MODES.map(({ key, label }) => (
-        <Toggle
-          key={key}
-          value={key}
-          aria-label={label}
-          title={key}
-          className="px-2 py-1 text-[10px] font-medium transition-colors cursor-pointer"
-          style={{
-            color: viewMode === key ? "var(--term-btn-text)" : "var(--term-text)",
-            backgroundColor: viewMode === key ? "var(--term-btn-bg)" : "var(--term-btn-muted-bg)",
-          }}
-        >
-          {label}
-        </Toggle>
-      ))}
+      {MODES.map(({ key, label }) => {
+        const active = viewMode === key;
+        return (
+          <Toggle
+            key={key}
+            value={key}
+            aria-label={label}
+            title={key}
+            className="term-press px-2.5 py-1 text-[10px] font-medium transition-colors cursor-pointer"
+            style={{
+              color: active ? "var(--term-btn-text)" : "var(--term-text-muted)",
+              backgroundColor: active ? "var(--term-btn-bg)" : "transparent",
+              borderRadius: "var(--radius-sm)",
+              boxShadow: active ? "var(--shadow-sm)" : "none",
+            }}
+          >
+            {label}
+          </Toggle>
+        );
+      })}
     </ToggleGroup>
   );
 });

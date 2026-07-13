@@ -3,8 +3,24 @@ import { useMe, useUpdateUsername } from "../hooks/use-profile";
 
 const MAX_USERNAME_LENGTH = 32;
 
-export function UsernameModal() {
-  const [isOpen, setIsOpen] = useState(false);
+interface UsernameModalProps {
+  // When provided, the modal is controlled from outside (e.g. the user menu)
+  // and renders no trigger of its own.
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function UsernameModal({ open, onOpenChange }: UsernameModalProps = {}) {
+  const controlled = onOpenChange !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = controlled ? !!open : internalOpen;
+  const setIsOpen = useCallback(
+    (v: boolean) => {
+      if (controlled) onOpenChange!(v);
+      else setInternalOpen(v);
+    },
+    [controlled, onOpenChange],
+  );
   const [usernameInput, setUsernameInput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -51,27 +67,29 @@ export function UsernameModal() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="p-1.5 transition-colors cursor-pointer"
-        title="Username & public profile"
-        style={{ color: "var(--term-text)" }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--term-text-bright)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--term-text)";
-        }}
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-          />
-        </svg>
-      </button>
+      {!controlled && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-1.5 transition-colors cursor-pointer"
+          title="Username & public profile"
+          style={{ color: "var(--term-text)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--term-text-bright)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--term-text)";
+          }}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+            />
+          </svg>
+        </button>
+      )}
 
       {!isOpen ? null : (
         <>

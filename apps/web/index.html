@@ -4,14 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#151b23" />
+    <meta name="theme-color" content="#131614" />
     <link
       rel="preload"
-      href="/fonts/JetBrainsMono-Regular.woff2"
+      href="/fonts/GeistMono-Variable.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
+    <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <title>Markdown Viewer</title>
     <script>
       // Prevent flash of wrong theme
@@ -20,7 +21,7 @@
           var theme = localStorage.getItem('markdown-viewer-theme');
           if (theme === 'light' || (!theme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
             document.documentElement.classList.add('light');
-            document.querySelector('meta[name="theme-color"]').content = '#f6f8fa';
+            document.querySelector('meta[name="theme-color"]').content = '#f7f9f8';
           }
         } catch(e) {}
       })();

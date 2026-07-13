@@ -4,9 +4,9 @@ import { TermButton } from "../components/term-button";
 import { ThemeToggle } from "../components/theme-toggle";
 
 /**
- * Signed-out homepage. Polished-hybrid terminal aesthetic: Schibsted Grotesk
- * carries the copy, the app's mono stack carries code/labels/window chrome,
- * and everything reuses the --term-* theme tokens so light mode works free.
+ * Signed-out homepage. Modern dev-workstation aesthetic: Geist Mono carries the
+ * chrome and display headlines, Geist Sans the reading copy, Pixelify Sans the
+ * brand mark. Everything keys off the --term-* tokens so both themes work free.
  */
 
 // --- Pixel icons (pixelarticons, MIT — https://github.com/halfmage/pixelarticons) ---
@@ -24,42 +24,41 @@ const PIXEL_PATHS = {
     "M4 2h16v2H4zm0 18h16v2H4zM2 4h2v16H2zm18 0h2v16h-2zM6 16h2v2H6zm2-2h2v2H8zm-2-2h2v2H6z",
 } as const;
 
-interface PixelIconProps {
-  name: keyof typeof PIXEL_PATHS;
-  className?: string;
-}
-
-function PixelIcon({ name, className = "w-5 h-5" }: PixelIconProps) {
+function PixelIcon({ name, className = "w-5 h-5" }: { name: keyof typeof PIXEL_PATHS; className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      shapeRendering="crispEdges"
-      aria-hidden="true"
-      className={className}
-    >
+    <svg viewBox="0 0 24 24" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true" className={className}>
       <path d={PIXEL_PATHS[name]} />
     </svg>
   );
 }
 
-// --- Building blocks ---
-
-interface WindowChromeProps {
-  title: string;
-  badge?: string;
-  children: React.ReactNode;
-  className?: string;
+// Small mono eyebrow label with a green comment prefix.
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs mb-6" style={{ color: "var(--term-text-muted)" }}>
+      <span style={{ color: "var(--term-green)" }}>//</span> {children}
+    </p>
+  );
 }
 
-function WindowChrome({ title, badge, children, className = "" }: WindowChromeProps) {
+const HEADING_STYLE: React.CSSProperties = {
+  color: "var(--term-text-bright)",
+  fontSize: "clamp(1.7rem, 1.25rem + 1.9vw, 2.5rem)",
+  lineHeight: 1.1,
+  fontWeight: 680,
+  letterSpacing: "-0.03em",
+};
+
+// --- Window chrome for the product mocks (boxy, terminal-style) ---
+
+function WindowChrome({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) {
   return (
     <div
-      className={`overflow-hidden ${className}`}
+      className="overflow-hidden"
       style={{
         backgroundColor: "var(--term-bg-raised)",
         border: "1px solid var(--term-border)",
-        boxShadow: "0 24px 48px -24px var(--term-backdrop)",
+        boxShadow: "var(--shadow-md)",
       }}
     >
       <div
@@ -67,9 +66,9 @@ function WindowChrome({ title, badge, children, className = "" }: WindowChromePr
         style={{ borderBottom: "1px solid var(--term-border)" }}
       >
         <span className="flex gap-1.5" aria-hidden="true">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--term-red)" }} />
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--term-amber)" }} />
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--term-green)" }} />
+          <span className="w-2.5 h-2.5" style={{ backgroundColor: "var(--term-red)" }} />
+          <span className="w-2.5 h-2.5" style={{ backgroundColor: "var(--term-amber)" }} />
+          <span className="w-2.5 h-2.5" style={{ backgroundColor: "var(--term-green)" }} />
         </span>
         <span className="text-[11px] flex-1 truncate" style={{ color: "var(--term-text-muted)" }}>
           {title}
@@ -91,13 +90,10 @@ function EditorMock() {
     <div className="relative">
       <WindowChrome title="release-notes.md — mdv" badge="[split]">
         <div className="grid sm:grid-cols-2">
-          {/* Source pane (hidden on narrow screens, like the app's mobile mode) */}
+          {/* Source pane (mono) */}
           <div
             className="hidden sm:block p-4 text-[11px] leading-[1.9] whitespace-pre overflow-hidden"
-            style={{
-              borderRight: "1px solid var(--term-border)",
-              color: "var(--term-text-muted)",
-            }}
+            style={{ borderRight: "1px solid var(--term-border)", color: "var(--term-text-muted)" }}
             aria-hidden="true"
           >
             <div>
@@ -128,39 +124,29 @@ function EditorMock() {
             </div>
           </div>
 
-          {/* Preview pane */}
-          <div className="p-4 text-[11px] leading-[1.9]">
-            <p
-              className="landing-sans text-[15px] font-bold mb-1"
-              style={{ color: "var(--term-text-bright)" }}
-            >
+          {/* Preview pane (rendered → sans) */}
+          <div className="font-sans p-4 text-[11px] leading-[1.9]">
+            <p className="text-[15px] font-bold mb-1" style={{ color: "var(--term-text-bright)" }}>
               Redline v0.4
             </p>
-            <p className="landing-sans text-xs mb-3" style={{ color: "var(--term-text)" }}>
+            <p className="text-xs mb-3" style={{ color: "var(--term-text)" }}>
               Ship notes for the October release.
             </p>
-            <p
-              className="landing-sans text-[13px] font-bold mb-1"
-              style={{ color: "var(--term-text-bright)" }}
-            >
+            <p className="text-[13px] font-bold mb-1" style={{ color: "var(--term-text-bright)" }}>
               What changed
             </p>
-            <ul
-              className="landing-sans text-xs space-y-0.5 mb-3"
-              style={{ color: "var(--term-text)" }}
-            >
+            <ul className="text-xs space-y-0.5 mb-3" style={{ color: "var(--term-text)" }}>
               <li className="flex gap-2">
                 <span style={{ color: "var(--term-text-muted)" }}>•</span>Live preview as you type
               </li>
               <li className="flex gap-2">
-                <span style={{ color: "var(--term-text-muted)" }}>•</span>Mermaid diagrams render
-                inline
+                <span style={{ color: "var(--term-text-muted)" }}>•</span>Mermaid diagrams render inline
               </li>
               <li className="flex gap-2">
                 <span style={{ color: "var(--term-text-muted)" }}>•</span>Comments anchored to lines
               </li>
             </ul>
-            <p className="landing-sans text-xs" style={{ color: "var(--term-text)" }}>
+            <p className="text-xs" style={{ color: "var(--term-text)" }}>
               Deploy with{" "}
               <code
                 className="font-mono px-1 text-[10px]"
@@ -179,12 +165,12 @@ function EditorMock() {
         style={{
           backgroundColor: "var(--term-bg-surface)",
           border: "1px solid var(--term-border)",
-          boxShadow: "0 8px 16px -8px var(--term-backdrop)",
+          boxShadow: "var(--shadow-md)",
         }}
       >
         <span style={{ color: "var(--term-green)" }}>●</span>
         <span style={{ color: "var(--term-text-muted)" }}>yael · L6</span>
-        <span className="landing-sans" style={{ color: "var(--term-text-bright)" }}>
+        <span className="font-sans" style={{ color: "var(--term-text-bright)" }}>
           ship it
         </span>
       </div>
@@ -198,19 +184,16 @@ function AgentTerminalMock() {
     <WindowChrome title="agent — claude code" badge="mcp: mdv ✓">
       <div className="p-4 text-[11px] leading-[2] whitespace-pre-wrap break-all sm:break-normal">
         <div style={{ color: "var(--term-text)" }}>
-          <span style={{ color: "var(--term-text-muted)" }}>$ </span>claude mcp add --transport http
-          mdv \
+          <span style={{ color: "var(--term-text-muted)" }}>$ </span>claude mcp add --transport http mdv \
         </div>
         <div style={{ color: "var(--term-text)" }}>{"    "}https://mdv.itaikeren.com/api/mcp</div>
         <div style={{ color: "var(--term-green)" }}>✓ connected · 6 tools</div>
         <div>&nbsp;</div>
         <div style={{ color: "var(--term-text-bright)" }}>
-          <span style={{ color: "var(--term-text-muted)" }}>&gt; </span>publish this week's
-          changelog
+          <span style={{ color: "var(--term-text-muted)" }}>&gt; </span>publish this week's changelog
         </div>
         <div style={{ color: "var(--term-text)" }}>
-          <span style={{ color: "var(--term-green)" }}>⏺ </span>publish_document(name:
-          "changelog-w28.md")
+          <span style={{ color: "var(--term-green)" }}>⏺ </span>publish_document(name: "changelog-w28.md")
         </div>
         <div style={{ color: "var(--term-text-muted)" }}>
           {"  "}⎿ share_url:{" "}
@@ -280,9 +263,14 @@ export const Landing = memo(function Landing() {
       {/* Nav */}
       <header style={{ borderBottom: "1px solid var(--term-border)" }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-sm font-bold" style={{ color: "var(--term-green)" }}>
+          <span
+            className="font-pixel text-lg"
+            style={{ color: "var(--term-text-bright)", fontWeight: 600 }}
+          >
             mdv
-            <span className="landing-caret">▮</span>
+            <span className="landing-caret" style={{ color: "var(--term-green)" }}>
+              _
+            </span>
           </span>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -298,21 +286,17 @@ export const Landing = memo(function Landing() {
         <section className="max-w-6xl mx-auto px-6 pt-16 pb-20 lg:pt-24 lg:pb-28">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div>
-              <p
-                className="landing-reveal text-xs mb-6"
-                style={{ color: "var(--term-text-muted)", "--reveal-i": 0 } as React.CSSProperties}
-              >
-                <span style={{ color: "var(--term-green)" }}>//</span> for humans &amp; agents
-              </p>
+              <div className="landing-reveal" style={{ "--reveal-i": 0 } as React.CSSProperties}>
+                <Eyebrow>for humans &amp; agents</Eyebrow>
+              </div>
               <h1
-                className="landing-sans landing-reveal font-bold tracking-tight mb-6"
+                className="landing-reveal mb-6"
                 style={
                   {
-                    color: "var(--term-text-bright)",
-                    fontSize: "clamp(2.25rem, 1.2rem + 2.6vw, 3rem)",
-                    lineHeight: 1.04,
-                    fontWeight: 660,
-                    letterSpacing: "-0.022em",
+                    ...HEADING_STYLE,
+                    fontSize: "clamp(2rem, 1.1rem + 2.6vw, 3rem)",
+                    lineHeight: 1.06,
+                    fontWeight: 700,
                     "--reveal-i": 1,
                   } as React.CSSProperties
                 }
@@ -322,10 +306,10 @@ export const Landing = memo(function Landing() {
                 Ship it as a link.
               </h1>
               <p
-                className="landing-sans landing-reveal text-base leading-relaxed mb-8 max-w-[46ch]"
+                className="font-sans landing-reveal text-base leading-relaxed mb-8 max-w-[46ch]"
                 style={{ color: "var(--term-text)", "--reveal-i": 2 } as React.CSSProperties}
               >
-                MDV is a fast markdown workspace — split-screen editing, live preview, one-click
+                mdv is a fast markdown workspace — split-screen editing, live preview, one-click
                 share links. And your AI agents can publish here too, straight over MCP.
               </p>
               <div
@@ -360,33 +344,21 @@ export const Landing = memo(function Landing() {
         <section id="agents" style={{ borderTop: "1px solid var(--term-border)" }}>
           <div className="max-w-6xl mx-auto px-6 py-20 lg:py-28">
             <div className="grid lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] gap-12 lg:gap-16 items-start">
-              {/* Terminal first on desktop, second on mobile */}
               <div className="order-2 lg:order-1">
                 <AgentTerminalMock />
               </div>
               <div className="order-1 lg:order-2">
-                <p className="text-xs mb-6" style={{ color: "var(--term-text-muted)" }}>
-                  <span style={{ color: "var(--term-green)" }}>//</span> agents
-                </p>
-                <h2
-                  className="landing-sans font-bold tracking-tight mb-5"
-                  style={{
-                    color: "var(--term-text-bright)",
-                    fontSize: "clamp(1.75rem, 1.3rem + 1.9vw, 2.5rem)",
-                    lineHeight: 1.12,
-                    fontWeight: 640,
-                    letterSpacing: "-0.015em",
-                  }}
-                >
+                <Eyebrow>agents</Eyebrow>
+                <h2 className="mb-5" style={HEADING_STYLE}>
                   Your agents publish here too.
                 </h2>
                 <p
-                  className="landing-sans text-[15px] leading-relaxed mb-8 max-w-[52ch]"
+                  className="font-sans text-[15px] leading-relaxed mb-8 max-w-[52ch]"
                   style={{ color: "var(--term-text)" }}
                 >
-                  MDV ships a built-in MCP server. Hand your agent an API key and it can publish
-                  reports, keep docs up to date, and read the comments your team leaves — no
-                  browser, no copy-paste.
+                  mdv ships a built-in MCP server. Hand your agent an API key and it can publish
+                  reports, keep docs up to date, and read the comments your team leaves — no browser,
+                  no copy-paste.
                 </p>
                 <dl>
                   {MCP_TOOLS.map((tool) => (
@@ -395,26 +367,17 @@ export const Landing = memo(function Landing() {
                       className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 py-2.5"
                       style={{ borderTop: "1px solid var(--term-border)" }}
                     >
-                      <dt
-                        className="text-xs shrink-0 sm:w-44"
-                        style={{ color: "var(--term-green)" }}
-                      >
+                      <dt className="text-xs shrink-0 sm:w-44" style={{ color: "var(--term-green)" }}>
                         {tool.name}
                       </dt>
-                      <dd
-                        className="landing-sans text-[13px]"
-                        style={{ color: "var(--term-text-muted)" }}
-                      >
+                      <dd className="font-sans text-[13px]" style={{ color: "var(--term-text-muted)" }}>
                         {tool.desc}
                       </dd>
                     </div>
                   ))}
                   <div
                     className="py-2.5 text-[11px]"
-                    style={{
-                      borderTop: "1px solid var(--term-border)",
-                      color: "var(--term-text-muted)",
-                    }}
+                    style={{ borderTop: "1px solid var(--term-border)", color: "var(--term-text-muted)" }}
                   >
                     + list_documents, add_comment
                   </div>
@@ -427,27 +390,13 @@ export const Landing = memo(function Landing() {
         {/* Features */}
         <section style={{ borderTop: "1px solid var(--term-border)" }}>
           <div className="max-w-6xl mx-auto px-6 py-20 lg:py-28">
-            <p className="text-xs mb-6" style={{ color: "var(--term-text-muted)" }}>
-              <span style={{ color: "var(--term-green)" }}>//</span> the workspace
-            </p>
-            <h2
-              className="landing-sans font-bold tracking-tight mb-12"
-              style={{
-                color: "var(--term-text-bright)",
-                fontSize: "clamp(1.75rem, 1.3rem + 1.9vw, 2.5rem)",
-                lineHeight: 1.12,
-                fontWeight: 640,
-                letterSpacing: "-0.015em",
-              }}
-            >
+            <Eyebrow>the workspace</Eyebrow>
+            <h2 className="mb-12" style={HEADING_STYLE}>
               Everything a doc needs.
             </h2>
             <div
               className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px"
-              style={{
-                backgroundColor: "var(--term-border)",
-                border: "1px solid var(--term-border)",
-              }}
+              style={{ backgroundColor: "var(--term-border)", border: "1px solid var(--term-border)" }}
             >
               {FEATURES.map((feature) => (
                 <div
@@ -458,14 +407,11 @@ export const Landing = memo(function Landing() {
                   <span style={{ color: "var(--term-green)" }}>
                     <PixelIcon name={feature.icon} />
                   </span>
-                  <h3
-                    className="text-xs font-bold mt-4 mb-2"
-                    style={{ color: "var(--term-text-bright)" }}
-                  >
+                  <h3 className="text-xs font-bold mt-4 mb-2" style={{ color: "var(--term-text-bright)" }}>
                     {feature.name}
                   </h3>
                   <p
-                    className="landing-sans text-[13px] leading-relaxed max-w-[44ch]"
+                    className="font-sans text-[13px] leading-relaxed max-w-[44ch]"
                     style={{ color: "var(--term-text-muted)" }}
                   >
                     {feature.desc}
@@ -485,10 +431,7 @@ export const Landing = memo(function Landing() {
                     api_keys
                   </h3>
                 </span>
-                <p
-                  className="landing-sans text-[13px] leading-relaxed"
-                  style={{ color: "var(--term-text-muted)" }}
-                >
+                <p className="font-sans text-[13px] leading-relaxed" style={{ color: "var(--term-text-muted)" }}>
                   Scoped mdv_ keys power the MCP endpoint. Create, rotate, and revoke them from the
                   app — one key per agent.
                 </p>
@@ -503,16 +446,7 @@ export const Landing = memo(function Landing() {
             <p className="text-xs mb-5" style={{ color: "var(--term-text-muted)" }}>
               <span style={{ color: "var(--term-green)" }}>$</span> mdv publish
             </p>
-            <h2
-              className="landing-sans font-bold tracking-tight mb-8"
-              style={{
-                color: "var(--term-text-bright)",
-                fontSize: "clamp(1.75rem, 1.3rem + 1.9vw, 2.5rem)",
-                lineHeight: 1.12,
-                fontWeight: 640,
-                letterSpacing: "-0.015em",
-              }}
-            >
+            <h2 className="mb-8" style={HEADING_STYLE}>
               Your next doc deserves a link.
             </h2>
             <SignInButton mode="modal">
@@ -528,7 +462,10 @@ export const Landing = memo(function Landing() {
           style={{ color: "var(--term-text-muted)" }}
         >
           <span>
-            <span style={{ color: "var(--term-green)" }}>mdv</span> © 2026
+            <span className="font-pixel" style={{ color: "var(--term-text-bright)" }}>
+              mdv
+            </span>{" "}
+            © 2026
           </span>
           <span className="flex items-center gap-1.5">
             <PixelIcon name="terminal" className="w-3.5 h-3.5" />

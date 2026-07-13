@@ -81,21 +81,13 @@ export function PublicFileView() {
         <div className="max-w-7xl mx-auto px-3 py-2 md:px-4 md:py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 md:gap-3 min-w-0">
-              <Link
-                to="/"
-                className="text-xs transition-colors flex-shrink-0"
-                style={{ color: "var(--term-text-muted)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--term-text-bright)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--term-text-muted)";
-                }}
-              >
-                <span className="text-xs font-medium" style={{ color: "var(--term-green)" }}>
+              <Link to="/" className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-xs" style={{ color: "var(--term-green)" }}>
                   ~
-                </span>{" "}
-                mdv
+                </span>
+                <span className="font-pixel text-sm" style={{ color: "var(--term-text-bright)" }}>
+                  mdv
+                </span>
               </Link>
               <span className="flex-shrink-0" style={{ color: "var(--term-border)" }}>
                 /

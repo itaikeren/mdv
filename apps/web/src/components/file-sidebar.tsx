@@ -61,12 +61,15 @@ export const FileSidebar = memo(function FileSidebar({
   return (
     <div className="h-full flex flex-col" style={{ backgroundColor: "var(--term-bg)" }}>
       {/* Header */}
-      <div className="flex-shrink-0 p-3 md:p-3">
-        <div className="flex items-center gap-1.5 mb-3">
-          <span className="text-xs font-medium" style={{ color: "var(--term-green)" }}>
+      <div className="flex-shrink-0 p-3">
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <span className="text-xs" style={{ color: "var(--term-green)" }}>
             ~
           </span>
-          <span className="text-xs font-medium" style={{ color: "var(--term-text-bright)" }}>
+          <span
+            className="font-pixel text-[15px] leading-none"
+            style={{ color: "var(--term-text-bright)", fontWeight: 600 }}
+          >
             mdv
           </span>
         </div>
@@ -79,7 +82,11 @@ export const FileSidebar = memo(function FileSidebar({
               onClick={onFileImport}
               className="p-1.5 transition-colors cursor-pointer flex-shrink-0"
               title="Import .md file"
-              style={{ color: "var(--term-text)", border: "1px solid var(--term-border)" }}
+              style={{
+                color: "var(--term-text)",
+                border: "1px solid var(--term-border)",
+                borderRadius: "var(--radius)",
+              }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "var(--term-text-bright)";
                 e.currentTarget.style.borderColor = "var(--term-green)";
@@ -120,7 +127,7 @@ export const FileSidebar = memo(function FileSidebar({
                 className="group relative cursor-pointer"
               >
                 {editingFileId === file.id ? (
-                  <div className="p-1.5">
+                  <div className="p-1">
                     <input
                       type="text"
                       value={editingName}
@@ -132,6 +139,7 @@ export const FileSidebar = memo(function FileSidebar({
                         backgroundColor: "var(--term-bg-surface)",
                         color: "var(--term-text-bright)",
                         border: "1px solid var(--term-green)",
+                        borderRadius: "var(--radius-sm)",
                       }}
                       autoFocus
                     />
@@ -142,6 +150,7 @@ export const FileSidebar = memo(function FileSidebar({
                     style={{
                       backgroundColor:
                         activeFileId === file.id ? "var(--term-bg-surface)" : "transparent",
+                      borderRadius: "var(--radius-sm)",
                     }}
                     onMouseEnter={(e) => {
                       if (activeFileId !== file.id) {
