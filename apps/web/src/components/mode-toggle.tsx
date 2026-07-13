@@ -27,7 +27,7 @@ export const ModeToggle = memo(function ModeToggle({
       className="flex items-center gap-0.5 p-0.5"
       style={{
         backgroundColor: "var(--term-bg-surface)",
-        borderRadius: "var(--radius)",
+        borderRadius: "0",
         border: "1px solid var(--term-border)",
       }}
     >
@@ -43,7 +43,7 @@ export const ModeToggle = memo(function ModeToggle({
             style={{
               color: active ? "var(--term-btn-text)" : "var(--term-text-muted)",
               backgroundColor: active ? "var(--term-btn-bg)" : "transparent",
-              borderRadius: "var(--radius-sm)",
+              borderRadius: "0",
               boxShadow: active ? "var(--shadow-sm)" : "none",
             }}
           >

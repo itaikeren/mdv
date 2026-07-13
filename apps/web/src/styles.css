@@ -191,6 +191,17 @@ pre,
   background-color: var(--term-bg-surface) !important;
 }
 
+/* Fenced code blocks read a touch larger than the prose-sm default (~12px),
+   matching the editor's 13px mono. Inline code is intentionally left alone. */
+.prose pre,
+.prose pre code,
+.prose .shiki,
+.prose .shiki pre,
+.prose .shiki code {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
 @media (max-width: 767px) {
   .prose {
     font-size: 0.875rem;

@@ -136,6 +136,9 @@ interface PreviewProps {
   // reports the block's source-line range so it can be commented on. Absent for
   // the main editor, where behavior is unchanged.
   onCommentOnBlock?: (startLine: number, endLine: number) => void;
+  // In the in-app workspace (split/preview modes) the rendered column fills the
+  // pane; public reading views keep the capped, comfortable measure.
+  wide?: boolean;
 }
 
 interface CodeBlockProps extends SourceLineProps {
@@ -329,6 +332,7 @@ export const Preview = memo(function Preview({
   markdown,
   scrollRef,
   onCommentOnBlock,
+  wide = false,
 }: PreviewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -359,9 +363,10 @@ export const Preview = memo(function Preview({
       }}
     >
       {markdown ? (
-        // Full-width box, but the reading column is capped and centered so long
-        // lines stay in a comfortable measure (like the typography plugin default).
-        <div className="prose prose-sm prose-invert mx-auto max-w-[70ch]">
+        // Full-width box. In reading views the column is capped and centered so
+        // long lines stay in a comfortable measure (like the typography plugin
+        // default); in the workspace (`wide`) it fills the available pane.
+        <div className={`prose prose-sm prose-invert mx-auto ${wide ? "max-w-none" : "max-w-[70ch]"}`}>
           <ReactMarkdown
             remarkPlugins={MARKDOWN_PLUGINS}
             rehypePlugins={REHYPE_PLUGINS}

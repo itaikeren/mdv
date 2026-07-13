@@ -542,20 +542,21 @@ export function MainApp() {
                           key="preview-stable"
                           markdown={deferredContent}
                           scrollRef={previewScrollRef}
+                          wide
                         />
                       </div>
                     </div>
                   )}
 
                   {viewMode === "edit" && (
-                    <div className="max-w-6xl mx-auto h-full">
+                    <div className="max-w-7xl mx-auto h-full">
                       <Editor value={localContent} onChange={handleMarkdownChange} />
                     </div>
                   )}
 
                   {viewMode === "preview" && (
-                    <div className="h-full">
-                      <Preview key="preview-stable" markdown={deferredContent} />
+                    <div className="max-w-7xl mx-auto h-full">
+                      <Preview key="preview-stable" markdown={deferredContent} wide />
                     </div>
                   )}
                 </>

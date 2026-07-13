@@ -171,12 +171,6 @@ export const Editor = memo(function Editor({
         borderRadius: "var(--radius-lg)",
         boxShadow: "var(--shadow-sm)",
       }}
-      onFocusCapture={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--term-border-focus)";
-      }}
-      onBlurCapture={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--term-border)";
-      }}
     >
       <textarea
         ref={mergedTextareaRef}
@@ -184,11 +178,14 @@ export const Editor = memo(function Editor({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="font-mono w-full max-w-[76ch] mx-auto flex-1 min-h-96 resize-none outline-none text-[13px] leading-[1.7] p-4"
+        className="font-mono w-full flex-1 min-h-96 resize-none outline-none text-[13px] leading-[1.7] p-4"
         style={{
           backgroundColor: "transparent",
           color: "var(--term-text-bright)",
           caretColor: "var(--term-green)",
+          // Suppress the app-wide :focus-visible outline (styles.css) on the
+          // writing surface — the blinking caret is the focus cue here.
+          outline: "none",
         }}
       />
       <div
