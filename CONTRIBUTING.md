@@ -29,14 +29,24 @@ pnpm dev     # web on :5173, api on :3000
 | `pnpm build` | Build both apps |
 | `pnpm lint` | oxlint across every package |
 | `pnpm typecheck` | Typecheck the API and its Vercel function entrypoint |
+| `pnpm test` | Run the unit tests (vitest) |
 | `pnpm format` | Format with oxfmt |
 | `pnpm format:check` | Check formatting without writing |
 
-CI runs `lint`, `format:check`, `typecheck`, and `build` on every pull request. Please make
-sure those pass locally first — they are exactly what CI runs.
+CI runs `lint`, `format:check`, `typecheck`, `test`, and `build` on every pull request.
+Please make sure those pass locally first — they are exactly what CI runs.
 
-> **Note:** there is no automated test suite yet. Until there is, please describe how you
-> manually verified a change in the pull request. Tests are very welcome contributions.
+## Tests
+
+The suite (`apps/api/**/*.test.ts`, run with vitest) covers the API's pure logic: line-anchor
+resolution, comment-author email masking, slug generation, and API-key hashing and scopes. It
+touches no database — the Neon driver is lazy, so a dummy `DATABASE_URL` (set in
+`vitest.config.ts`) is enough for modules that build a client at import time.
+
+Coverage is deliberately weighted toward the code where a bug is expensive: anything handling
+untrusted input, or anything that could leak an email or a key. Routes and React components
+are not covered yet, and tests there are very welcome. If a change isn't covered by a test,
+say how you verified it manually in the PR.
 
 ## Conventions
 

@@ -11,7 +11,8 @@
     "agent:login": "node --env-file=.env.local scripts/agent-login.mjs",
     "format": "pnpm -r format",
     "format:check": "pnpm -r format:check",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "pnpm -r test"
   },
   "devDependencies": {
     "@types/node": "^24.7.0",

@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   ci:
-    name: lint · format · typecheck · build
+    name: lint · format · typecheck · test · build
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -39,6 +39,12 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      # Unit tests for the API's pure logic (anchor resolution, email masking, slugs,
+      # API-key hashing). No database is touched — the Neon driver is lazy, so a dummy
+      # DATABASE_URL is enough for the modules that build a client at import time.
+      - name: Test
+        run: pnpm test
 
       # Also typechecks the API (apps/api runs `tsc`), and proves the client bundle builds.
       # No Clerk/Neon credentials are needed: VITE_ vars are only read at runtime, and the

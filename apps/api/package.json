@@ -13,7 +13,9 @@
     "lint": "oxlint",
     "format": "oxfmt --ignore-path ../../.gitignore .",
     "format:check": "oxfmt --check --ignore-path ../../.gitignore .",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hono/clerk-auth": "^3.0.3",
@@ -33,6 +35,7 @@
     "oxfmt": "^0.28.0",
     "oxlint": "^1.43.0",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }
