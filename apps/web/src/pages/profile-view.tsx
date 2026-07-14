@@ -91,7 +91,10 @@ export function ProfileView() {
               <span className="flex-shrink-0" style={{ color: "var(--term-border)" }}>
                 /
               </span>
-              <span className="text-xs md:text-sm truncate" style={{ color: "var(--term-text-muted)" }}>
+              <span
+                className="text-xs md:text-sm truncate"
+                style={{ color: "var(--term-text-muted)" }}
+              >
                 @{resolvedUsername}
               </span>
             </div>
@@ -144,7 +147,10 @@ export function ProfileView() {
         {files.length === 0 ? (
           <div
             className="py-16 text-center"
-            style={{ border: "1px solid var(--term-border)", backgroundColor: "var(--term-bg-raised)" }}
+            style={{
+              border: "1px solid var(--term-border)",
+              backgroundColor: "var(--term-bg-raised)",
+            }}
           >
             <p className="text-sm mb-1" style={{ color: "var(--term-text-bright)" }}>
               nothing published yet
@@ -178,7 +184,10 @@ export function ProfileView() {
                     >
                       {file.name}
                     </p>
-                    <p className="text-[10px] mt-1 truncate" style={{ color: "var(--term-text-muted)" }}>
+                    <p
+                      className="text-[10px] mt-1 truncate"
+                      style={{ color: "var(--term-text-muted)" }}
+                    >
                       <span style={{ color: "var(--term-green)" }}>
                         /u/{resolvedUsername}/{file.slug}
                       </span>{" "}

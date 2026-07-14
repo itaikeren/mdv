@@ -1,8 +1,8 @@
-const STORAGE_KEY_FILES = "markdown-viewer-files";
-const STORAGE_KEY_ACTIVE = "markdown-viewer-active";
-const STORAGE_KEY_VIEW_MODE = "markdown-viewer-view-mode";
-const STORAGE_KEY_SYNC_SCROLL = "markdown-viewer-sync-scroll";
-const LEGACY_STORAGE_KEY = "markdown-viewer-content";
+const STORAGE_KEY_FILES = "mdv-files";
+const STORAGE_KEY_ACTIVE = "mdv-active";
+const STORAGE_KEY_VIEW_MODE = "mdv-view-mode";
+const STORAGE_KEY_SYNC_SCROLL = "mdv-sync-scroll";
+const LEGACY_STORAGE_KEY = "mdv-content";
 
 export type ViewMode = "split" | "edit" | "preview";
 

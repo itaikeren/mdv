@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { useComments, useCreateComment, useDeleteComment } from "../hooks/use-comments";
 import { useTheme } from "../hooks/use-theme";
 import { scrollToBlockForLine } from "../utils/anchor-scroll";
-import type { PublicComment } from "@markdown-viewer/shared";
+import type { PublicComment } from "@mdv/shared";
 
 // A block of source lines a comment is anchored to (1-based, inclusive).
 export interface CommentAnchor {

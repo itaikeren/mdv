@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useCreateShare, useFileShares, useDeleteShare, useUpdateShare } from "../hooks/use-shares";
 import { useUpdateFile } from "../hooks/use-files";
 import { useMe } from "../hooks/use-profile";
-import type { Share } from "@markdown-viewer/shared";
+import type { Share } from "@mdv/shared";
 
 interface ShareButtonProps {
   fileId: string;

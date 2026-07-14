@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useApiKeys, useCreateApiKey, useDeleteApiKey } from "../hooks/use-api-keys";
-import type { ApiKey, ApiKeyScope, CreateApiKeyResponse } from "@markdown-viewer/shared";
+import type { ApiKey, ApiKeyScope, CreateApiKeyResponse } from "@mdv/shared";
 
 const MAX_KEY_NAME_LENGTH = 100;
 

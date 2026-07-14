@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiKeysApi } from "../lib/api";
-import type { CreateApiKeyInput } from "@markdown-viewer/shared";
+import type { CreateApiKeyInput } from "@mdv/shared";
 
 export function useApiKeys(enabled = true) {
   return useQuery({

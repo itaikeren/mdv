@@ -3,7 +3,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { files, shares } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
-import type { CreateShareInput, SharedFile } from "@markdown-viewer/shared";
+import type { CreateShareInput, SharedFile } from "@mdv/shared";
 
 const app = new Hono();
 

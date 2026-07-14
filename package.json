@@ -1,18 +1,23 @@
 {
-  "name": "markdown-viewer",
+  "name": "mdv",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n \"API,WEB\" -c \"blue,magenta\" \"pnpm --filter @markdown-viewer/api dev\" \"pnpm --filter @markdown-viewer/web dev\"",
-    "build": "pnpm --filter @markdown-viewer/web build && pnpm --filter @markdown-viewer/api build",
-    "lint": "pnpm --filter @markdown-viewer/web lint",
-    "preview": "pnpm --filter @markdown-viewer/web preview",
-    "agent:login": "node --env-file=.env.local scripts/agent-login.mjs"
+    "dev": "concurrently -n \"API,WEB\" -c \"blue,magenta\" \"pnpm --filter @mdv/api dev\" \"pnpm --filter @mdv/web dev\"",
+    "build": "pnpm --filter @mdv/web build && pnpm --filter @mdv/api build",
+    "lint": "pnpm -r lint",
+    "preview": "pnpm --filter @mdv/web preview",
+    "agent:login": "node --env-file=.env.local scripts/agent-login.mjs",
+    "format": "pnpm -r format",
+    "format:check": "pnpm -r format:check",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^24.7.0",
     "concurrently": "^9.2.1",
     "typescript": "^5.9.2"
-  }
+  },
+  "license": "Apache-2.0",
+  "description": "A fast markdown workspace with a built-in MCP server, so agents can publish too."
 }

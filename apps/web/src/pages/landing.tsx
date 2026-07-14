@@ -24,9 +24,21 @@ const PIXEL_PATHS = {
     "M4 2h16v2H4zm0 18h16v2H4zM2 4h2v16H2zm18 0h2v16h-2zM6 16h2v2H6zm2-2h2v2H8zm-2-2h2v2H6z",
 } as const;
 
-function PixelIcon({ name, className = "w-5 h-5" }: { name: keyof typeof PIXEL_PATHS; className?: string }) {
+function PixelIcon({
+  name,
+  className = "w-5 h-5",
+}: {
+  name: keyof typeof PIXEL_PATHS;
+  className?: string;
+}) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" shapeRendering="crispEdges" aria-hidden="true" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+      className={className}
+    >
       <path d={PIXEL_PATHS[name]} />
     </svg>
   );
@@ -51,7 +63,15 @@ const HEADING_STYLE: React.CSSProperties = {
 
 // --- Window chrome for the product mocks (boxy, terminal-style) ---
 
-function WindowChrome({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) {
+function WindowChrome({
+  title,
+  badge,
+  children,
+}: {
+  title: string;
+  badge?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div
       className="overflow-hidden"
@@ -140,7 +160,8 @@ function EditorMock() {
                 <span style={{ color: "var(--term-text-muted)" }}>•</span>Live preview as you type
               </li>
               <li className="flex gap-2">
-                <span style={{ color: "var(--term-text-muted)" }}>•</span>Mermaid diagrams render inline
+                <span style={{ color: "var(--term-text-muted)" }}>•</span>Mermaid diagrams render
+                inline
               </li>
               <li className="flex gap-2">
                 <span style={{ color: "var(--term-text-muted)" }}>•</span>Comments anchored to lines
@@ -184,16 +205,19 @@ function AgentTerminalMock() {
     <WindowChrome title="agent — claude code" badge="mcp: mdv ✓">
       <div className="p-4 text-[11px] leading-[2] whitespace-pre-wrap break-all sm:break-normal">
         <div style={{ color: "var(--term-text)" }}>
-          <span style={{ color: "var(--term-text-muted)" }}>$ </span>claude mcp add --transport http mdv \
+          <span style={{ color: "var(--term-text-muted)" }}>$ </span>claude mcp add --transport http
+          mdv \
         </div>
         <div style={{ color: "var(--term-text)" }}>{"    "}https://mdv.itai.sh/api/mcp</div>
         <div style={{ color: "var(--term-green)" }}>✓ connected · 6 tools</div>
         <div>&nbsp;</div>
         <div style={{ color: "var(--term-text-bright)" }}>
-          <span style={{ color: "var(--term-text-muted)" }}>&gt; </span>publish this week's changelog
+          <span style={{ color: "var(--term-text-muted)" }}>&gt; </span>publish this week's
+          changelog
         </div>
         <div style={{ color: "var(--term-text)" }}>
-          <span style={{ color: "var(--term-green)" }}>⏺ </span>publish_document(name: "changelog-w28.md")
+          <span style={{ color: "var(--term-green)" }}>⏺ </span>publish_document(name:
+          "changelog-w28.md")
         </div>
         <div style={{ color: "var(--term-text-muted)" }}>
           {"  "}⎿ share_url:{" "}
@@ -357,8 +381,8 @@ export const Landing = memo(function Landing() {
                   style={{ color: "var(--term-text)" }}
                 >
                   mdv ships a built-in MCP server. Hand your agent an API key and it can publish
-                  reports, keep docs up to date, and read the comments your team leaves — no browser,
-                  no copy-paste.
+                  reports, keep docs up to date, and read the comments your team leaves — no
+                  browser, no copy-paste.
                 </p>
                 <dl>
                   {MCP_TOOLS.map((tool) => (
@@ -367,17 +391,26 @@ export const Landing = memo(function Landing() {
                       className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 py-2.5"
                       style={{ borderTop: "1px solid var(--term-border)" }}
                     >
-                      <dt className="text-xs shrink-0 sm:w-44" style={{ color: "var(--term-green)" }}>
+                      <dt
+                        className="text-xs shrink-0 sm:w-44"
+                        style={{ color: "var(--term-green)" }}
+                      >
                         {tool.name}
                       </dt>
-                      <dd className="font-sans text-[13px]" style={{ color: "var(--term-text-muted)" }}>
+                      <dd
+                        className="font-sans text-[13px]"
+                        style={{ color: "var(--term-text-muted)" }}
+                      >
                         {tool.desc}
                       </dd>
                     </div>
                   ))}
                   <div
                     className="py-2.5 text-[11px]"
-                    style={{ borderTop: "1px solid var(--term-border)", color: "var(--term-text-muted)" }}
+                    style={{
+                      borderTop: "1px solid var(--term-border)",
+                      color: "var(--term-text-muted)",
+                    }}
                   >
                     + list_documents, add_comment
                   </div>
@@ -396,7 +429,10 @@ export const Landing = memo(function Landing() {
             </h2>
             <div
               className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px"
-              style={{ backgroundColor: "var(--term-border)", border: "1px solid var(--term-border)" }}
+              style={{
+                backgroundColor: "var(--term-border)",
+                border: "1px solid var(--term-border)",
+              }}
             >
               {FEATURES.map((feature) => (
                 <div
@@ -407,7 +443,10 @@ export const Landing = memo(function Landing() {
                   <span style={{ color: "var(--term-green)" }}>
                     <PixelIcon name={feature.icon} />
                   </span>
-                  <h3 className="text-xs font-bold mt-4 mb-2" style={{ color: "var(--term-text-bright)" }}>
+                  <h3
+                    className="text-xs font-bold mt-4 mb-2"
+                    style={{ color: "var(--term-text-bright)" }}
+                  >
                     {feature.name}
                   </h3>
                   <p
@@ -431,7 +470,10 @@ export const Landing = memo(function Landing() {
                     api_keys
                   </h3>
                 </span>
-                <p className="font-sans text-[13px] leading-relaxed" style={{ color: "var(--term-text-muted)" }}>
+                <p
+                  className="font-sans text-[13px] leading-relaxed"
+                  style={{ color: "var(--term-text-muted)" }}
+                >
                   Scoped mdv_ keys power the MCP endpoint. Create, rotate, and revoke them from the
                   app — one key per agent.
                 </p>

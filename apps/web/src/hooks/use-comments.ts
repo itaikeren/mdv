@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { commentsApi } from "../lib/api";
-import type { ShareCommentsResponse, CreateCommentInput } from "@markdown-viewer/shared";
+import type { ShareCommentsResponse, CreateCommentInput } from "@mdv/shared";
 
 export function useComments(shareId: string, enabled: boolean) {
   return useQuery({

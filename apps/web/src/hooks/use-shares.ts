@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sharesApi } from "../lib/api";
-import type { CreateShareInput } from "@markdown-viewer/shared";
+import type { CreateShareInput } from "@mdv/shared";
 
 export function useCreateShare() {
   const queryClient = useQueryClient();

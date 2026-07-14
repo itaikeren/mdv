@@ -258,7 +258,7 @@ Environment variables are set in Vercel dashboard:
 
 ```yaml
 # In your deployment workflow
-- run: pnpm --filter @markdown-viewer/api db:push
+- run: pnpm --filter @mdv/api db:push
 ```
 
 **Option 2: Run locally before deploy**

@@ -82,7 +82,7 @@ async function resolveApiKeyAuthor(c: Context, auth: AuthContext): Promise<strin
 // server (and transport) is created per HTTP request — the transport is
 // stateless, so nothing is shared across requests.
 export function createMcpServer(auth: AuthContext, c: Context): McpServer {
-  const server = new McpServer({ name: "markdown-viewer", version: "1.0.0" });
+  const server = new McpServer({ name: "mdv", version: "1.0.0" });
   const origin = new URL(c.req.url).origin;
 
   // --- publish_document -----------------------------------------------------

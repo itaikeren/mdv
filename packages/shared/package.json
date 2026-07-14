@@ -1,5 +1,5 @@
 {
-  "name": "@markdown-viewer/shared",
+  "name": "@mdv/shared",
   "version": "0.0.0",
   "private": true,
   "main": "./index.ts",

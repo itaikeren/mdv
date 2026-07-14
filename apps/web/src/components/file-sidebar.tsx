@@ -1,5 +1,5 @@
 import React, { useState, useCallback, memo } from "react";
-import type { MarkdownFileMeta } from "@markdown-viewer/shared";
+import type { MarkdownFileMeta } from "@mdv/shared";
 import { TermButton } from "./term-button";
 
 interface FileSidebarProps {

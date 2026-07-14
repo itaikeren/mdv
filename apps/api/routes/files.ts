@@ -7,7 +7,7 @@ import { SLUG_REGEX, deriveUniqueSlug } from "../lib/slug.js";
 import { isUniqueViolation } from "../lib/db-errors.js";
 import { RATE_LIMITS, checkRateLimit, tooManyRequests } from "../lib/rate-limit.js";
 import { checkCreateQuota, checkUpdateQuota } from "../lib/quota.js";
-import type { CreateFileInput, UpdateFileInput } from "@markdown-viewer/shared";
+import type { CreateFileInput, UpdateFileInput } from "@mdv/shared";
 
 const app = new Hono();
 

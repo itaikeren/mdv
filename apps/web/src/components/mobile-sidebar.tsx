@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import { Dialog } from "@base-ui-components/react/dialog";
 import { FileSidebar } from "./file-sidebar";
-import type { MarkdownFileMeta } from "@markdown-viewer/shared";
+import type { MarkdownFileMeta } from "@mdv/shared";
 
 interface MobileSidebarProps {
   open: boolean;

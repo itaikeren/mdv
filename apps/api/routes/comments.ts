@@ -6,7 +6,7 @@ import { getOptionalAuth, requireAuth } from "../middleware/auth.js";
 import { isCommentOutdated, resolveAnchor } from "../lib/comment-outdated.js";
 import { maskEmail, toPublicAuthor } from "../lib/comment-author.js";
 import { RATE_LIMITS, checkRateLimit, clientIp, tooManyRequests } from "../lib/rate-limit.js";
-import type { CreateCommentInput, PublicComment } from "@markdown-viewer/shared";
+import type { CreateCommentInput, PublicComment } from "@mdv/shared";
 
 const MAX_AUTHOR_NAME_LENGTH = 50;
 

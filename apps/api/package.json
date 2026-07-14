@@ -1,5 +1,5 @@
 {
-  "name": "@markdown-viewer/api",
+  "name": "@mdv/api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,14 +11,14 @@
     "db:push": "drizzle-kit push",
     "db:push:prod": "DB_TARGET=prod drizzle-kit push",
     "lint": "oxlint",
-    "format": "oxfmt --write .",
-    "format:check": "oxfmt .",
+    "format": "oxfmt --ignore-path ../../.gitignore .",
+    "format:check": "oxfmt --check --ignore-path ../../.gitignore .",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@hono/clerk-auth": "^3.0.3",
     "@hono/mcp": "^0.3.1",
-    "@markdown-viewer/shared": "workspace:*",
+    "@mdv/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@neondatabase/serverless": "^1.0.2",
     "drizzle-orm": "^0.44.6",

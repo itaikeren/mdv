@@ -5,7 +5,7 @@ import { db } from "../db/client.js";
 import { apiKeys, users } from "../db/schema.js";
 import { generateApiKey, requireAuth, type AuthContext } from "../middleware/auth.js";
 import { RATE_LIMITS, checkRateLimit, tooManyRequests } from "../lib/rate-limit.js";
-import type { CreateApiKeyInput } from "@markdown-viewer/shared";
+import type { CreateApiKeyInput } from "@mdv/shared";
 
 const app = new Hono();
 

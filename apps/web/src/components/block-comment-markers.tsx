@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
-import type { PublicComment } from "@markdown-viewer/shared";
+import type { PublicComment } from "@mdv/shared";
 import { pickBlockForLine, scrollToCommentThread } from "../utils/anchor-scroll";
 
 // Absolute-positioned overlay of comment-count badges in the preview's left

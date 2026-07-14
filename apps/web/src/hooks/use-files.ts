@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { filesApi } from "../lib/api";
-import type {
-  CreateFileInput,
-  UpdateFileInput,
-  MarkdownFile,
-  MarkdownFileMeta,
-} from "@markdown-viewer/shared";
+import type { CreateFileInput, UpdateFileInput, MarkdownFile, MarkdownFileMeta } from "@mdv/shared";
 
 // The list cache (["files"]) holds metadata only; full content lives in the
 // per-file cache (["files", id]) so the app never downloads documents it isn't showing.

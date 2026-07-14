@@ -1,5 +1,5 @@
 {
-  "name": "@markdown-viewer/web",
+  "name": "@mdv/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,14 +8,14 @@
     "build": "vite build",
     "lint": "oxlint",
     "format": "oxfmt --write src",
-    "format:check": "oxfmt src",
+    "format:check": "oxfmt --check src",
     "preview": "vite preview"
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.4",
     "@clerk/clerk-react": "^5.50.0",
     "@clerk/themes": "^2.4.57",
-    "@markdown-viewer/shared": "workspace:*",
+    "@mdv/shared": "workspace:*",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.90.2",
     "mermaid": "^11.10.1",

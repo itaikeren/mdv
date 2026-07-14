@@ -16,7 +16,7 @@ import type {
   User,
   PublicProfile,
   PublicFile,
-} from "@markdown-viewer/shared";
+} from "@mdv/shared";
 
 const API_BASE = "/api";
 

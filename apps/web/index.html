@@ -48,7 +48,7 @@
       // Prevent flash of wrong theme
       (function() {
         try {
-          var theme = localStorage.getItem('markdown-viewer-theme');
+          var theme = localStorage.getItem('mdv-theme');
           if (theme === 'light' || (!theme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
             document.documentElement.classList.add('light');
             document.querySelector('meta[name="theme-color"]').content = '#f7f9f8';

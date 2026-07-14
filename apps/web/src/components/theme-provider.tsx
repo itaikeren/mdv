@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { ThemeContext, type Theme } from "../contexts/theme-context";
 
-const STORAGE_KEY = "markdown-viewer-theme";
+const STORAGE_KEY = "mdv-theme";
 
 const THEME_COLORS: Record<Theme, string> = {
   dark: "#131614",

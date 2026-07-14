@@ -10,7 +10,7 @@ A full-stack markdown viewer built with Vite + React (frontend) and Hono API (ba
 
 ### Monorepo Structure
 ```
-markdown-viewer/
+mdv/
 ├── apps/
 │   ├── web/          # Vite React frontend
 │   └── api/          # Hono API (Vercel Functions)
@@ -69,7 +69,7 @@ Dev and prod are separate Neon branches - schema changes must be pushed to both.
 
 ### Package Manager
 - **Always use pnpm** (not npm or yarn)
-- Add package to specific app: `pnpm -F @markdown-viewer/web add <package>@latest`
+- Add package to specific app: `pnpm -F @mdv/web add <package>@latest`
 
 ## API Endpoints
 
@@ -141,7 +141,7 @@ ALLOWED_ORIGINS=https://example.com
 
 - **TypeScript**: Strict mode, typed components with Props interfaces
 - **Naming**: Components = PascalCase, utilities = camelCase, files = kebab-case
-- **Imports**: Use workspace aliases (`@markdown-viewer/shared`)
+- **Imports**: Use workspace aliases (`@mdv/shared`)
 - **Linting**: oxlint (web: react, typescript, import, react-perf plugins; api: typescript, import plugins)
 - **Formatting**: oxfmt
 

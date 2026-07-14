@@ -30,12 +30,19 @@ import {
   saveViewMode,
   type ViewMode,
 } from "../utils/storage";
-import type { MarkdownFileMeta } from "@markdown-viewer/shared";
+import type { MarkdownFileMeta } from "@mdv/shared";
 
 // 16px stroke icon for the Clerk user-menu items.
 function MenuIcon({ d }: { d: string }) {
   return (
-    <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+    <svg
+      width={16}
+      height={16}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.6}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d={d} />
     </svg>
   );

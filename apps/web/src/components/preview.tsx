@@ -366,7 +366,9 @@ export const Preview = memo(function Preview({
         // Full-width box. In reading views the column is capped and centered so
         // long lines stay in a comfortable measure (like the typography plugin
         // default); in the workspace (`wide`) it fills the available pane.
-        <div className={`prose prose-sm prose-invert mx-auto ${wide ? "max-w-none" : "max-w-[70ch]"}`}>
+        <div
+          className={`prose prose-sm prose-invert mx-auto ${wide ? "max-w-none" : "max-w-[70ch]"}`}
+        >
           <ReactMarkdown
             remarkPlugins={MARKDOWN_PLUGINS}
             rehypePlugins={REHYPE_PLUGINS}
