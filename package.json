@@ -11,6 +11,7 @@
     "agent:login": "node --env-file=.env.local scripts/agent-login.mjs"
   },
   "devDependencies": {
+    "@types/node": "^24.7.0",
     "concurrently": "^9.2.1",
     "typescript": "^5.9.2"
   }
