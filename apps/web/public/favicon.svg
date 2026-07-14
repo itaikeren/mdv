@@ -1,5 +1,17 @@
-<svg width="26" height="17" viewBox="0 0 26 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M15.333 14.167H9.66699V12.75H15.333V14.167ZM9.66699 12.75H6.83301V11.333H9.66699V12.75ZM18.167 12.75H15.333V11.333H18.167V12.75ZM6.83301 11.333H5.41699V9.91699H6.83301V11.333ZM19.583 11.333H18.167V9.91699H19.583V11.333ZM13.917 10.625H11.083V7.79199H13.917V10.625ZM5.41699 9.91699H4V8.5H5.41699V9.91699ZM21 9.91699H19.583V8.5H21V9.91699ZM6.83301 8.5H5.41699V7.08301H6.83301V8.5ZM19.583 8.5H18.167V7.08301H19.583V8.5ZM9.66699 7.08301H6.83301V5.66699H9.66699V7.08301ZM18.167 7.08301H15.333V5.66699H18.167V7.08301ZM15.333 5.66699H9.66699V4.25H15.333V5.66699Z" fill="black"/>
-<path d="M22.348 14.116H23.764V4.42H22.348V3.88H24.676V14.656H22.348V14.116Z" fill="black"/>
-<path d="M0.732 3.88H3.06V4.42H1.644V14.116H3.06V14.656H0.732V3.88Z" fill="black"/>
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="mdv">
+  <!--
+    mdv brand mark: the lowercase "m" from Pixelify Sans, the same pixel typeface as
+    the app's `mdv_` wordmark. This path is the font's own glyph outline (extracted
+    from PixelifySans-Variable, unitsPerEm 1000) transformed into the 32x32 viewBox,
+    so the asymmetric humps and pixel-corner ledges match the wordmark exactly.
+    Filled with the --term-green token, theme-aware for light/dark browser tabs.
+    oklch is the source of truth; the hex before it is a fallback for older engines.
+  -->
+  <style>
+    .m { fill: #59d483; fill: oklch(0.78 0.16 152); }
+    @media (prefers-color-scheme: light) {
+      .m { fill: #11813c; fill: oklch(0.53 0.14 150); }
+    }
+  </style>
+  <path class="m" d="M3.0 25.3 L3.0 6.7 L14.39 6.7 L14.39 10.37 L17.61 10.37 L17.61 6.7 L25.38 6.7 L25.38 10.37 L29.0 10.37 L29.0 25.3 L24.98 25.3 L24.98 10.73 L18.01 10.73 L18.01 25.3 L13.99 25.3 L13.99 10.73 L7.07 10.73 L7.07 25.3 Z" />
 </svg>
