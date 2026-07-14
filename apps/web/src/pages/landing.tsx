@@ -186,7 +186,7 @@ function AgentTerminalMock() {
         <div style={{ color: "var(--term-text)" }}>
           <span style={{ color: "var(--term-text-muted)" }}>$ </span>claude mcp add --transport http mdv \
         </div>
-        <div style={{ color: "var(--term-text)" }}>{"    "}https://mdv.itaikeren.com/api/mcp</div>
+        <div style={{ color: "var(--term-text)" }}>{"    "}https://mdv.itai.sh/api/mcp</div>
         <div style={{ color: "var(--term-green)" }}>✓ connected · 6 tools</div>
         <div>&nbsp;</div>
         <div style={{ color: "var(--term-text-bright)" }}>
@@ -198,7 +198,7 @@ function AgentTerminalMock() {
         <div style={{ color: "var(--term-text-muted)" }}>
           {"  "}⎿ share_url:{" "}
           <span style={{ color: "var(--term-blue)", textDecoration: "underline" }}>
-            mdv.itaikeren.com/share/x7kf9q2m
+            mdv.itai.sh/share/x7kf9q2m
           </span>
         </div>
         <div>

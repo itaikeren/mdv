@@ -2,7 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- SVG first (modern browsers, theme-aware); .ico is the fallback for older ones. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="alternate icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#131614" />
     <link
@@ -13,7 +18,32 @@
       crossorigin
     />
     <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin />
-    <title>Markdown Viewer</title>
+    <title>mdv — write it in markdown, ship it as a link</title>
+    <meta
+      name="description"
+      content="A fast markdown workspace: split-screen editing, live preview, and one-click share links — plus a built-in MCP so your AI agents can publish here too."
+    />
+
+    <!-- Social / link previews (X, WhatsApp, Slack, iMessage). og:image must be absolute. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="mdv" />
+    <meta property="og:url" content="https://mdv.itai.sh/" />
+    <meta property="og:title" content="mdv — write it in markdown, ship it as a link" />
+    <meta
+      property="og:description"
+      content="A fast markdown workspace: split-screen editing, live preview, and one-click share links — plus a built-in MCP so your AI agents can publish here too."
+    />
+    <meta property="og:image" content="https://mdv.itai.sh/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="mdv — write it in markdown, ship it as a link" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="mdv — write it in markdown, ship it as a link" />
+    <meta
+      name="twitter:description"
+      content="A fast markdown workspace: split-screen editing, live preview, and one-click share links — plus a built-in MCP so your AI agents can publish here too."
+    />
+    <meta name="twitter:image" content="https://mdv.itai.sh/og.png" />
     <script>
       // Prevent flash of wrong theme
       (function() {
