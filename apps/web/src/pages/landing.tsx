@@ -2,6 +2,7 @@ import { memo } from "react";
 import { SignInButton } from "@clerk/clerk-react";
 import { TermButton } from "../components/term-button";
 import { ThemeToggle } from "../components/theme-toggle";
+import { GithubIconLink, GithubTextLink } from "../components/github-link";
 
 /**
  * Signed-out homepage. Modern dev-workstation aesthetic: Geist Mono carries the
@@ -297,6 +298,7 @@ export const Landing = memo(function Landing() {
             </span>
           </span>
           <div className="flex items-center gap-3">
+            <GithubIconLink />
             <ThemeToggle />
             <SignInButton mode="modal">
               <TermButton>sign_in</TermButton>
@@ -509,10 +511,11 @@ export const Landing = memo(function Landing() {
             </span>{" "}
             © 2026
           </span>
-          <span className="flex items-center gap-1.5">
+          <span className="hidden md:flex items-center gap-1.5">
             <PixelIcon name="terminal" className="w-3.5 h-3.5" />
             built for people who live in terminals
           </span>
+          <GithubTextLink label="open source · github" />
         </div>
       </footer>
     </div>

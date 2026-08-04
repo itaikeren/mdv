@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { usePublicFile } from "../hooks/use-public-file";
 import { Preview } from "../components/preview";
 import { ThemeToggle } from "../components/theme-toggle";
+import { GithubTextLink } from "../components/github-link";
 
 export function PublicFileView() {
   const { username, slug } = useParams<{ username: string; slug: string }>();
@@ -161,7 +162,8 @@ export function PublicFileView() {
             }}
           >
             mdv
-          </Link>
+          </Link>{" "}
+          <span aria-hidden="true">·</span> <GithubTextLink className="text-[10px] align-middle" />
         </p>
       </footer>
     </div>

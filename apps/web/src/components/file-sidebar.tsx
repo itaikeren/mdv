@@ -1,6 +1,7 @@
 import React, { useState, useCallback, memo } from "react";
 import type { MarkdownFileMeta } from "@mdv/shared";
 import { TermButton } from "./term-button";
+import { GithubTextLink } from "./github-link";
 
 interface FileSidebarProps {
   files: MarkdownFileMeta[];
@@ -262,10 +263,14 @@ export const FileSidebar = memo(function FileSidebar({
 
       {/* Footer */}
       <div
-        className="flex-shrink-0 p-3 text-[10px] text-center"
+        className="flex-shrink-0 p-3 text-[10px] flex items-center justify-center gap-2"
         style={{ color: "var(--term-text-muted)" }}
       >
-        {files.length} {files.length === 1 ? "file" : "files"}
+        <span>
+          {files.length} {files.length === 1 ? "file" : "files"}
+        </span>
+        <span aria-hidden="true">·</span>
+        <GithubTextLink />
       </div>
     </div>
   );

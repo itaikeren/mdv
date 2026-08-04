@@ -8,6 +8,7 @@ import { CommentsSection } from "../components/comments-section";
 import type { CommentAnchor } from "../components/comments-section";
 import { BlockCommentMarkers } from "../components/block-comment-markers";
 import { ThemeToggle } from "../components/theme-toggle";
+import { GithubTextLink } from "../components/github-link";
 
 export function ShareView() {
   const { token } = useParams<{ token: string }>();
@@ -239,7 +240,8 @@ export function ShareView() {
             }}
           >
             mdv
-          </Link>
+          </Link>{" "}
+          <span aria-hidden="true">·</span> <GithubTextLink className="text-[10px] align-middle" />
         </p>
       </footer>
     </div>
