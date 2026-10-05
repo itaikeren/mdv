@@ -60,6 +60,13 @@ app.route("/u", publicRoutes);
 // MCP endpoint (Streamable HTTP): agents authenticate with an API-key bearer
 // token. A fresh, stateless server + transport is built per request.
 app.all("/mcp", async (c) => {
+  // No standalone SSE stream: a per-request server can never push on it, and an
+  // open GET holds a function instance (billed memory) until maxDuration. 405 is
+  // the spec's "no stream offered" signal; clients then use POST only.
+  if (c.req.method === "GET") {
+    return c.body(null, 405, { Allow: "POST" });
+  }
+
   const auth = await authenticateApiKey(c);
   if (!auth) {
     return c.json({ error: "Unauthorized" }, 401, { "WWW-Authenticate": "Bearer" });
